@@ -90,7 +90,6 @@ exec guile -e main -s "$0" "$@"
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (sources-path (hash-ref options 'sources))
-	 (sources-path (or sources-path (dirname (dirname (current-filename)))))
 	 (live-username "user")
 	 (live-password "live")
 	 (hostname "shitfuck")
