@@ -86,10 +86,11 @@ exec guile -e main -s "$0" "$@"
       "This usage help..."))))
 
 (define (main args)
-  (let* ((options (utils:getopt-extra args options-spec))
+  (let* ((project-path (dirname (dirname (current-filename))))
+	 (options (utils:getopt-extra args options-spec))
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
-	 (sources-path (hash-ref options 'sources))
+	 (sources-path project-path)
 	 (live-username "user")
 	 (live-password "live")
 	 (hostname "shitfuck")
