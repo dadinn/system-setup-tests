@@ -90,7 +90,6 @@ exec guile -e main -s "$0" "$@"
 	 (options (utils:getopt-extra args options-spec))
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
-	 (sources-path project-path)
 	 (live-username "user")
 	 (live-password "live")
 	 (hostname "shitfuck")
@@ -124,7 +123,7 @@ Valid options are:
 	      #:name name
 	      #:memory "4096"
 	      #:cdrom cdrom-path
-	      #:sources sources-path)))
+	      #:sources project-path))
 	(expect
 	 ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	  (sleep 1)
