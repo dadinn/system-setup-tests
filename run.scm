@@ -91,13 +91,6 @@ exec guile -e main -s "$0" "$@"
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
-	 (live-username "user")
-	 (live-password "live")
-	 (hostname "shitfuck")
-	 (sudo-username "fuckshit")
-	 (sudo-password "fuckshit")
-	 (root-dev "/dev/vda")
-	 (luks-passhprase "fuckshit")
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
@@ -125,6 +118,13 @@ Valid options are:
 	      #:memory "4096"
 	      #:cdrom cdrom-path
 	      #:sources project-path))
+	    (live-username "user")
+	    (live-password "live")
+	    (hostname "shitfuck")
+	    (sudo-username "fuckshit")
+	    (sudo-password "fuckshit")
+	    (root-dev "/dev/vda")
+	    (luks-passhprase "fuckshit"))
 	(expect
 	 ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	  (sleep 1)
