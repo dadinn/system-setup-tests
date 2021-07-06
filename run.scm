@@ -72,6 +72,14 @@ exec guile -e main -s "$0" "$@"
      (value-arg "PATH")
      (predicate ,(lambda (path) (file-exists? path)))
      (default "/home/dadinn/Downloads/isos/debian-live-10.3.0-amd64-standard.iso"))
+    (temp
+     (single-char #\t)
+     (description
+      "Path to store temporary files, logs, mirrors, etc.")
+     (value #t)
+     (value-arg "path")
+     (predicate ,utils:directory?)
+     (default "/var/tmp/system-setup"))
     (help
      (single-char #\h)
      (description
@@ -82,6 +90,7 @@ exec guile -e main -s "$0" "$@"
 	 (options (utils:getopt-extra args options-spec))
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
+	 (temp-path (hash-ref options 'temp))
 	 (live-username "user")
 	 (live-password "live")
 	 (hostname "shitfuck")
