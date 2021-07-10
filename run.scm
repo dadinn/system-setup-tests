@@ -72,6 +72,12 @@ exec guile -e main -s "$0" "$@"
      (value-arg "PATH")
      (predicate ,(lambda (path) (file-exists? path)))
      (default "/home/dadinn/Downloads/isos/debian-live-10.3.0-amd64-standard.iso"))
+    (sync-mirror
+     (single-char #\M)
+     (description "Synchronise local apt-mirror via internet, and then exit."))
+    (use-network
+     (single-char #\N)
+     (description "Use network for all package dependencies, and disable local apt-mirror."))
     (temp
      (single-char #\t)
      (description
@@ -91,6 +97,8 @@ exec guile -e main -s "$0" "$@"
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
+	 (sync-mirror? (hash-ref options 'sync-mirror))
+	 (use-network? (hash-ref options 'use-network))
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
