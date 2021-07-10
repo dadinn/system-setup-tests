@@ -72,14 +72,6 @@ exec guile -e main -s "$0" "$@"
      (value-arg "PATH")
      (predicate ,(lambda (path) (file-exists? path)))
      (default "/home/dadinn/Downloads/isos/debian-live-10.3.0-amd64-standard.iso"))
-    (sources
-     (description
-      "Path to sources directory containing init-instroot and bootstrap scripts (defaults to parent directory)")
-     (value #t)
-     (value-arg "PATH")
-     (predicate
-      ,(lambda (path) (utils:directory? path)))
-     (default ,(dirname (dirname (current-filename)))))
     (help
      (single-char #\h)
      (description
