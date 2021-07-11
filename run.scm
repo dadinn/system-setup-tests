@@ -128,22 +128,33 @@ Valid options are:
       (when (not (file-exists? "disks"))
 	(mkdir "disks"))
       (system* "qemu-img" "create" "-f" "qcow2" (string-append "disks/" name ".img") "4G")
-      (let ((expect-char-proc
-	     (lambda (c) (display c)))
-	    (expect-port
-	     (run-qemu
-	      #:name name
-	      #:memory "4096"
-	      #:cdrom cdrom-path
-	      #:mirrors mirrors-path
-	      #:sources project-path))
-	    (live-username "user")
-	    (live-password "live")
-	    (hostname "shitfuck")
-	    (sudo-username "fuckshit")
-	    (sudo-password "fuckshit")
-	    (root-dev "/dev/vda")
-	    (luks-passhprase "fuckshit"))
+      (let* ((start-time (current-time))
+	     (log-port
+	      (open-output-file
+	       (utils:path
+		temp-path
+		(string-append
+		 (strftime "%y%m%d_%H%M%S" (localtime start-time))
+		 "_" name
+		 ".log"))))
+	     (expect-char-proc
+	      (lambda (c)
+		(display c log-port)
+		(display c)))
+	     (expect-port
+	      (run-qemu
+	       #:name name
+	       #:memory "4096"
+	       #:cdrom cdrom-path
+	       #:mirrors mirrors-path
+	       #:sources project-path))
+	     (live-username "user")
+	     (live-password "live")
+	     (hostname "shitfuck")
+	     (sudo-username "fuckshit")
+	     (sudo-password "fuckshit")
+	     (root-dev "/dev/vda")
+	     (luks-passhprase "fuckshit"))
 	(expect
 	 ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	  (sleep 1)
