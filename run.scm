@@ -19,20 +19,28 @@ exec guile -e main -s "$0" "$@"
 
 (define (not-nul? c) (not (eqv? c #\nul)))
 
-(define (matcher pattern)
-  (lambda (s eof?)
-    (if (not eof?)
-	;;This is needed to support matching against output with null characters
-	(let ((stuff (string-filter not-nul? s)))
-	  (with-output-to-file "log.txt"
-	    (lambda ()
-	      (display (string-append "EXPECTING: " pattern))
-	      (newline)
-	      (display "MATCHING AGAINST:")
-	      (newline)
-	      (display stuff)))
-	  (regex:string-match pattern stuff))
-	#f)))
+(define (init-matcher logs-path)
+  (lambda (pattern)
+    (let ((start-time (current-time)))
+      (lambda (s eof?)
+	(if (not eof?)
+	    ;;This is needed to support matching against output with null characters
+	    (let ((stuff (string-filter not-nul? s)))
+	      (with-output-to-file
+		  (utils:path
+		   logs-path
+		   (string-append
+		    "expect_"
+ 		    (strftime "%y%m%d_%H%M%S" (localtime start-time))
+		    ".log"))
+		(lambda ()
+		  (display (string-append "EXPECTING: " pattern))
+		  (newline)
+		  (display "MATCHING AGAINST:")
+		  (newline)
+		  (display stuff)))
+	      (regex:string-match pattern stuff))
+	    #f)))))
 
 (define* (run-qemu #:key name memory cdrom sources mirrors drives)
   (let ((port
@@ -165,6 +173,7 @@ Valid options are:
 	       #:mirrors mirrors-path
 	       #:sources project-path
 	       #:drives all-drive-paths))
+	     (matcher (init-matcher logs-path))
 	     (live-username "user")
 	     (live-password "live")
 	     (hostname "shitfuck")
