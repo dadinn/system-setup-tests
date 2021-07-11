@@ -48,13 +48,13 @@ exec guile -e main -s "$0" "$@"
 	      `("local" "readonly"
 		("path" . ,sources)
 		("mount_tag" . "sources")
-		("security_model" . "passthrough")))
+		("security_model" . "mapped")))
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	     `("local"
 	       ("path" . ,mirrors)
 	       ("mount_tag" . "mirrors")
-	       ("security_model" . "passthrough")))
+	       ("security_model" . "mapped")))
 	    ,@(srfi1:append-map
 	       (lambda (path)
 		 (list
