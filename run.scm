@@ -107,6 +107,15 @@ exec guile -e main -s "$0" "$@"
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
+	 (drives-path (utils:path temp-path "drives"))
+	 (drive-boot-file (utils:path drives-path "boot.img"))
+	 (drive-zfs1-file (utils:path drives-path "zfs1.img"))
+	 (drive-zfs2-file (utils:path drives-path "zfs2.img"))
+	 (all-drive-paths
+	  (list
+	   drive-boot-file
+	   drive-zfs1-file
+	   drive-zfs2-file))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (help? (hash-ref options 'help)))
@@ -125,9 +134,13 @@ Valid options are:
       (newline))
      ;; ((not cdrom-path) (error "cdrom ISO image must be specified!"))
      (else
-      (when (not (file-exists? "disks"))
-	(mkdir "disks"))
-      (system* "qemu-img" "create" "-f" "qcow2" (string-append "disks/" name ".img") "4G")
+      (when (not (utils:directory? drives-path))
+	(utils:mkdir-p drives-path))
+      (for-each
+       (lambda (path)
+	 (when (not (file-exists? path))
+	   (system* "qemu-img" "create" "-f" "qcow2" path "4G")))
+       all-drive-paths)
       (let* ((start-time (current-time))
 	     (log-port
 	      (open-output-file
@@ -147,7 +160,8 @@ Valid options are:
 	       #:memory "4096"
 	       #:cdrom cdrom-path
 	       #:mirrors mirrors-path
-	       #:sources project-path))
+	       #:sources project-path
+	       #:drives all-drive-paths))
 	     (live-username "user")
 	     (live-password "live")
 	     (hostname "shitfuck")
