@@ -8,6 +8,7 @@ exec guile -e main -s "$0" "$@"
 
 (use-modules
  ((common utils) #:prefix utils:)
+ ((srfi srfi-1) #:prefix srfi1:)
  ((ice-9 popen) #:prefix popen:)
  ((ice-9 regex) #:prefix regex:)
  ((ice-9 rdelim) #:prefix rdelim:)
@@ -33,28 +34,37 @@ exec guile -e main -s "$0" "$@"
 	  (regex:string-match pattern stuff))
 	#f)))
 
-(define* (run-qemu #:key name memory cdrom sources)
+(define* (run-qemu #:key name memory cdrom sources mirrors drives)
   (let ((port
-	 (popen:open-pipe*
-	  OPEN_BOTH
-	  "qemu-system-x86_64"
-	  "-enable-kvm"
-	  "-nographic"
-	  "-m" (or memory "4096")
-	  ;;"-smbios" "uefi=on")
-	  "-cdrom" cdrom
-	  "-virtfs"
-	  (utils:emit-arg-alist
-	   `("local" "readonly"
-	     ("path" . ,sources)
-	     ("mount_tag" . "sources")
-	     ("security_model" . "passthrough")))
-	  "-drive"
-	  (utils:emit-arg-alist
-	   `(("file" . ,(utils:path "disks" (string-append name ".img")))
-	     ("format" . "qcow2")
-	     ("if" . "virtio")
-	     ("media" . "disk"))))))
+	 (apply popen:open-pipe* OPEN_BOTH
+	  `("qemu-system-x86_64"
+	    "-enable-kvm"
+	    "-nographic"
+	    "-m" ,(or memory "4096")
+	    ;;"-smbios" "uefi=on")
+	    "-cdrom" ,cdrom
+	    "-virtfs"
+	    ,(utils:emit-arg-alist
+	      `("local" "readonly"
+		("path" . ,sources)
+		("mount_tag" . "sources")
+		("security_model" . "passthrough")))
+	    "-virtfs"
+	    ,(utils:emit-arg-alist
+	     `("local"
+	       ("path" . ,mirrors)
+	       ("mount_tag" . "mirrors")
+	       ("security_model" . "passthrough")))
+	    ,@(srfi1:append-map
+	       (lambda (path)
+		 (list
+		  "-drive"
+		  (utils:emit-arg-alist
+		   `(("file" . ,path)
+		     ("format" . "qcow2")
+		     ("if" . "virtio")
+		     ("media" . "disk")))))
+	       drives)))))
     (setvbuf port 'none)
     port))
 
