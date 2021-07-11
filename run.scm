@@ -135,6 +135,7 @@ Valid options are:
 	      #:name name
 	      #:memory "4096"
 	      #:cdrom cdrom-path
+	      #:mirrors mirrors-path
 	      #:sources project-path))
 	    (live-username "user")
 	    (live-password "live")
@@ -172,8 +173,38 @@ Valid options are:
 	  (newline expect-port)))
 	(expect
 	 ((matcher "# ")
-	  (display "mount -t 9p -o ro sources /mnt/sources" expect-port)
+	  (display "mount -t 9p -o trans=virtio,msize=104857600,ro sources /mnt/sources" expect-port)
 	  (newline expect-port)))
+	(when (not use-network?)
+	  (expect
+	   ((matcher "# ")
+	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "mount -t 9p -o trans=virtio,msize=104857600 mirrors /var/spool/apt-mirror" expect-port)
+	    (newline expect-port)))
+	  (when sync-mirror?
+	   (expect
+	    ((matcher "# ")
+	     (display "apt update" expect-port)
+	     (newline expect-port)))
+	   (expect
+	    ((matcher "# ")
+	     (display "apt install -y apt-mirror" expect-port)
+	     (newline expect-port)))
+	   (expect
+	    ((matcher "# ")
+	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb \\1 \\2 main contrib;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	     (newline expect-port)))
+	   (expect
+	    ((matcher "# ")
+	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	     (newline expect-port))))
+	  (expect
+	   ((matcher "# ")
+	    (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:/var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
+	    (newline expect-port))))
 	(expect
 	 ((matcher "# ")
 	  (display "apt update" expect-port)
