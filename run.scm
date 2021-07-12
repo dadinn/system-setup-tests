@@ -50,7 +50,8 @@ exec guile -e main -s "$0" "$@"
 	    "-nographic"
 	    "-m" ,(or memory "4096")
 	    ;;"-smbios" "uefi=on")
-	    "-cdrom" ,cdrom
+	    ,@(if cdrom ; boot from CD-ROM the first time
+	       (list "-boot" "once=d" "-cdrom" cdrom))
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	      `("local" "readonly"
