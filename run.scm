@@ -42,12 +42,13 @@ exec guile -e main -s "$0" "$@"
 	      (regex:string-match pattern stuff))
 	    #f)))))
 
-(define* (run-qemu #:key name memory cdrom sources mirrors drives)
+(define* (run-qemu #:key name memory network? cdrom sources mirrors drives)
   (let ((port
 	 (apply popen:open-pipe* OPEN_BOTH
 	  `("qemu-system-x86_64"
 	    "-enable-kvm"
 	    "-nographic"
+	    ,@(if (not network?)  (list "-nic" "none") '())
 	    "-m" ,(or memory "4096")
 	    ;;"-smbios" "uefi=on")
 	    ,@(if cdrom ; boot from CD-ROM the first time
