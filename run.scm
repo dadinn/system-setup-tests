@@ -267,10 +267,18 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	 ((matcher "# ")
 	  (display "/mnt/sources/init-instroot/init-instroot.scm -r /dev/vda -s 100M" expect-port)
 	  (newline expect-port)))
-	(expect
-	 ((matcher "Are you sure\\? \\(Type uppercase yes\\): ")
-	  (display "YES" expect-port)
-	  (newline expect-port)))
+	(while
+	    ;; When the drive devices are reused between runs an additional confirmation is required
+	    ;; during partitioning, which requires an optional check.
+	    (expect
+	     ((matcher "Proceed anyway\\? \\(y,N\\)")
+	      (display "y" expect-port)
+	      (newline expect-port)
+	      #t)
+	     ((matcher "Are you sure\\? \\(Type uppercase yes\\): ")
+	      (display "YES" expect-port)
+	      (newline expect-port)
+	      #f)))
 	(expect
 	 ((matcher (string-append "Enter passphrase for " root-dev "[^:]*: "))
 	  (display luks-passhprase expect-port)
