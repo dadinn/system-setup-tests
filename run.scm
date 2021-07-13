@@ -66,11 +66,11 @@ exec guile -e main -s "$0" "$@"
 	       ("mount_tag" . "mirrors")
 	       ("security_model" . "mapped")))
 	    ,@(srfi1:append-map
-	       (lambda (path)
+	       (lambda (conf)
 		 (list
 		  "-drive"
 		  (utils:emit-arg-alist
-		   `(("file" . ,path)
+		   `(("file" . ,(car conf))
 		     ("format" . "qcow2")
 		     ("if" . "virtio")
 		     ("media" . "disk")))))
@@ -119,15 +119,13 @@ exec guile -e main -s "$0" "$@"
 	 (temp-path (hash-ref options 'temp))
 	 (logs-path (utils:path temp-path "logs"))
 	 (mirror-path (utils:path temp-path "mirror"))
-	 (drives-path (utils:path temp-path "drives"))
-	 (drive-boot-file (utils:path drives-path "boot.img"))
-	 (drive-zfs1-file (utils:path drives-path "zfs1.img"))
-	 (drive-zfs2-file (utils:path drives-path "zfs2.img"))
-	 (all-drive-paths
+	 (drives-path
+	  (utils:path temp-path "drives"))
+	 (drive-configs
 	  (list
-	   drive-boot-file
-	   drive-zfs1-file
-	   drive-zfs2-file))
+	   (cons (utils:path drives-path "boot.img") "1G")
+	   (cons (utils:path drives-path "zfs1.img") "4G")
+	   (cons (utils:path drives-path "zfs2.img") "4G")))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (help? (hash-ref options 'help)))
@@ -157,10 +155,12 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
       (when (and sync-mirror? (not (utils:directory? mirror-path)))
 	(utils:mkdir-p mirror-path))
       (for-each
-       (lambda (path)
-	 (when (not (file-exists? path))
-	   (system* "qemu-img" "create" "-f" "qcow2" path "4G")))
-       all-drive-paths)
+       (lambda (config)
+	 (let ((path (car config))
+	       (size (cdr config)))
+	   (when (not (file-exists? path))
+	     (system* "qemu-img" "create" "-f" "qcow2" path size))))
+       drive-configs)
       (let* ((start-time (current-time))
 	     (log-port
 	      (open-output-file
@@ -181,7 +181,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	       #:cdrom cdrom-path
 	       #:mirrors mirror-path
 	       #:sources project-path
-	       #:drives all-drive-paths))
+	       #:drives drive-configs))
 	     (matcher (init-matcher logs-path))
 	     (live-username "user")
 	     (live-password "live")
