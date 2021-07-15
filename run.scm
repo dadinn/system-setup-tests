@@ -143,7 +143,11 @@ Valid options are:
 
 " (utils:usage options-spec)))
       (newline))
-     ;; ((not cdrom-path) (error "cdrom ISO image must be specified!"))
+     ((not cdrom-path)
+      (error "cdrom ISO image must be specified!"))
+     ((and (not use-network?) (not (utils:directory? mirror-path)))
+      (error "Not using network, yet local mirror directory doesn't exist!.
+Please either run with networking enabled, or synchronise apt-mirror first!"))
      (else
       (when (not (utils:directory? drives-path))
 	(utils:mkdir-p drives-path))
