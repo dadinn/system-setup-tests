@@ -107,6 +107,7 @@ exec guile -e main -s "$0" "$@"
 	 (name (hash-ref options 'name))
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
+	 (logs-path (utils:path temp-path "logs"))
 	 (drives-path (utils:path temp-path "drives"))
 	 (drive-boot-file (utils:path drives-path "boot.img"))
 	 (drive-zfs1-file (utils:path drives-path "zfs1.img"))
@@ -136,6 +137,8 @@ Valid options are:
      (else
       (when (not (utils:directory? drives-path))
 	(utils:mkdir-p drives-path))
+      (when (not (utils:directory? logs-path))
+	(utils:mkdir-p logs-path))
       (for-each
        (lambda (path)
 	 (when (not (file-exists? path))
@@ -145,7 +148,7 @@ Valid options are:
 	     (log-port
 	      (open-output-file
 	       (utils:path
-		temp-path
+		logs-path
 		(string-append
 		 (strftime "%y%m%d_%H%M%S" (localtime start-time))
 		 "_" name
