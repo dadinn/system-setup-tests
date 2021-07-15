@@ -117,6 +117,7 @@ exec guile -e main -s "$0" "$@"
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
 	 (logs-path (utils:path temp-path "logs"))
+	 (mirror-path (utils:path temp-path "mirror"))
 	 (drives-path (utils:path temp-path "drives"))
 	 (drive-boot-file (utils:path drives-path "boot.img"))
 	 (drive-zfs1-file (utils:path drives-path "zfs1.img"))
@@ -148,6 +149,8 @@ Valid options are:
 	(utils:mkdir-p drives-path))
       (when (not (utils:directory? logs-path))
 	(utils:mkdir-p logs-path))
+      (when (and sync-mirror? (not (utils:directory? mirror-path)))
+	(utils:mkdir-p mirror-path))
       (for-each
        (lambda (path)
 	 (when (not (file-exists? path))
@@ -171,7 +174,7 @@ Valid options are:
 	       #:name name
 	       #:memory "4096"
 	       #:cdrom cdrom-path
-	       #:mirrors mirrors-path
+	       #:mirrors mirror-path
 	       #:sources project-path
 	       #:drives all-drive-paths))
 	     (matcher (init-matcher logs-path))
