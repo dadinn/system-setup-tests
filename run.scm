@@ -280,9 +280,13 @@ Valid options are:
 	(expect
 	 ((matcher "# ")
 	  (display
-	   (string-append
-	    "/mnt/sources/debian-setup/install.scm -n "
-	    hostname " -s " sudo-username)
+	   (string-join
+	    `("/mnt/sources/debian-setup/install.scm"
+	      "-n" ,hostname "-s" ,sudo-username
+	      ,@(if (not use-network?)
+		    (list "-m" "file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/")
+		    #nil))
+	    " ")
 	   expect-port)
 	  (newline expect-port)))
 	(expect
