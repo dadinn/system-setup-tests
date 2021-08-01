@@ -179,6 +179,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	       #:name name
 	       #:memory "4096"
 	       #:cdrom cdrom-path
+	       #:network? use-network?
 	       #:mirrors mirror-path
 	       #:sources project-path
 	       #:drives drive-configs))
