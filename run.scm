@@ -229,10 +229,14 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	  (expect
 	   ((matcher "# ")
 	    (display
-	     (string-append
-	      "mount -t 9p -o trans=virtio,msize=104857600"
-	      (if (not sync-mirror?) ",ro " " ")
-	      "mirrors /var/spool/apt-mirror") expect-port)
+	     (string-join
+	      (list
+	       "mount" "-t" "9p" "-o"
+	       (string-join
+		`("trans=virtio" "msize=104857600"
+		  ,@(if (not sync-mirror?) (list "ro") #nil))
+		",") "mirrors" "/var/spool/apt-mirror"))
+	     expect-port)
 	    (newline expect-port)))
 	  (when sync-mirror?
 	   (expect
