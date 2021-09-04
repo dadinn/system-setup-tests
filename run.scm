@@ -76,6 +76,7 @@ exec guile -e main -s "$0" "$@"
 		     ("media" . "disk")))))
 	       drives)))))
     (setvbuf port 'none)
+    (set-port-encoding! port "UTF-8")
     port))
 
 (define options-spec
