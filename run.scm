@@ -148,6 +148,8 @@ Valid options are:
      ((and (not use-network?) (not (utils:directory? mirror-path)))
       (error "Not using network, yet local mirror directory doesn't exist!.
 Please either run with networking enabled, or synchronise apt-mirror first!"))
+     ((and (not use-network?) sync-mirror?)
+      (error "Can only synchronise apt-mirror with network enabled!"))
      (else
       (when (not (utils:directory? drives-path))
 	(utils:mkdir-p drives-path))
@@ -256,7 +258,8 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	   (expect
 	    ((matcher "# ")
 	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
-	     (newline expect-port))))
+	     (newline expect-port)))
+	   (exit 0))
 	  (when (not use-network?)
 	    (expect
 	     ((matcher "# ")
@@ -301,6 +304,19 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	(expect
 	 ((matcher "Would you like to overwrite LUKS device with random data\\? \\[y/N\\]")
 	  (newline expect-port)))
+	(when (not use-network?)
+	  (expect
+	   ((matcher "# ")
+	    (display
+	     "mkdir -p /mnt/instroot/var/spool/apt-mirror"
+	     expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display
+	     "mount --bind /var/spool/apt-mirror /mnt/instroot/var/spool/apt-mirror"
+	     expect-port)
+	    (newline expect-port))))
 	(expect
 	 ((matcher "# ")
 	  (display
