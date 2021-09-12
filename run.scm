@@ -194,6 +194,9 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	     (sudo-password "fuckshit")
 	     (root-dev "/dev/vda")
 	     (luks-passhprase "fuckshit"))
+	(dynamic-wind
+	  (const #t)
+	  (lambda ()
 	(expect
 	 ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	  (sleep 1)
@@ -346,8 +349,9 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "Ready to finish installation and reboot the system\\? \\[Y/n\\]")
-	  (newline expect-port)))
-	(popen:close-pipe expect-port))))))
+	  (newline expect-port))))
+	  (lambda ()
+	    (popen:close-pipe expect-port))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
