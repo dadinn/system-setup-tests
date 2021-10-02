@@ -132,7 +132,7 @@ Quiting interactive mode is done by typing the `quit' command."
      (default "testing"))
     (cdrom
      (description
-      "Path to cdrom ISO file")
+      "Path to Live ISO file")
      (value #t)
      (value-arg "PATH")
      (predicate ,(lambda (path) (file-exists? path)))
@@ -188,7 +188,7 @@ Valid options are:
 " (utils:usage options-spec)))
       (newline))
      ((not cdrom-path)
-      (error "cdrom ISO image must be specified!"))
+      (error "Live ISO image must be specified!"))
      ((and (not use-network?) (not (utils:directory? mirror-path)))
       (error "Not using network, yet local mirror directory doesn't exist!.
 Please either run with networking enabled, or synchronise apt-mirror first!"))
