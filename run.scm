@@ -306,6 +306,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	    ((matcher "# ")
 	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
 	     (newline expect-port)))
+	   (utils:println "Finished synchronising apt-mirror!")
 	   (exit 0))
 	  (when (not use-network?)
 	    (expect
