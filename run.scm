@@ -395,7 +395,8 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	 ((matcher "Ready to finish installation and reboot the system\\? \\[Y/n\\]")
 	  (newline expect-port))))
 	  (lambda ()
-	    (popen:close-pipe expect-port))))))))
+	    (popen:close-pipe expect-port)
+	    (utils:println "Terminated QEMU process!"))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
