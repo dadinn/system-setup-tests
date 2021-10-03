@@ -61,7 +61,8 @@ Quiting interactive mode is done by typing the `quit' command."
               (else (loop))))))
          (waitpid pid))))))
 
-(define (not-nul? c) (not (eqv? c #\nul)))
+(define (printable-char? c)
+  (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
 
 (define (init-matcher logs-path)
   (lambda (pattern)
@@ -69,7 +70,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (lambda (s eof?)
 	(if (not eof?)
 	    ;;This is needed to support matching against output with null characters
-	    (let ((stuff (string-filter not-nul? s)))
+	    (let ((stuff (string-filter printable-char? s)))
 	      (with-output-to-file
 		  (utils:path
 		   logs-path
