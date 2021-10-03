@@ -191,8 +191,6 @@ Valid options are:
      ((and (not use-network?) (not (utils:directory? mirror-path)))
       (error "Not using network, yet local mirror directory doesn't exist!.
 Please either run with networking enabled, or synchronise apt-mirror first!"))
-     ((and (not use-network?) sync-mirror?)
-      (error "Can only synchronise apt-mirror with network enabled!"))
      (else
       (when (not (utils:directory? drives-path))
 	(utils:mkdir-p drives-path))
@@ -225,7 +223,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	       #:name name
 	       #:memory "4096"
 	       #:cdrom cdrom-path
-	       #:network? use-network?
+	       #:network? (or use-network? sync-mirror?)
 	       #:mirrors mirror-path
 	       #:sources project-path
 	       #:drives drive-configs))
@@ -271,7 +269,8 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	 ((matcher "# ")
 	  (display "mount -t 9p -o trans=virtio,msize=104857600,ro sources /mnt/sources" expect-port)
 	  (newline expect-port)))
-	(when (or sync-mirror? (not use-network?))
+	(cond
+	 (sync-mirror?
 	  (expect
 	   ((matcher "# ")
 	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
@@ -282,36 +281,54 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	     (string-join
 	      (list
 	       "mount" "-t" "9p" "-o"
-	       (string-join
-		`("trans=virtio" "msize=104857600"
-		  ,@(if (not sync-mirror?) (list "ro") #nil))
-		",") "mirrors" "/var/spool/apt-mirror"))
+	       (utils:emit-arg-alist
+		'(("trans" . "virtio")
+		  ("msize" . "104857600")))
+	       "mirrors" "/var/spool/apt-mirror")
+	      " ")
 	     expect-port)
 	    (newline expect-port)))
-	  (when sync-mirror?
-	   (expect
-	    ((matcher "# ")
-	     (display "apt update" expect-port)
-	     (newline expect-port)))
-	   (expect
-	    ((matcher "# ")
-	     (display "apt install -y apt-mirror" expect-port)
-	     (newline expect-port)))
-	   (expect
-	    ((matcher "# ")
-	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb \\1 \\2 main contrib;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
-	     (newline expect-port)))
-	   (expect
-	    ((matcher "# ")
-	     (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
-	     (newline expect-port)))
-	   (utils:println "Finished synchronising apt-mirror!")
-	   (exit 0))
-	  (when (not use-network?)
+	  (expect
+	   ((matcher "# ")
+	    (display "apt update" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "apt install -y apt-mirror" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb \\1 \\2 main contrib;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	    (newline expect-port)))
+	  (utils:println "Finished synchronising apt-mirror!")
+	  (exit 0))
+	 ((not use-network?)
+	  (expect
+	   ((matcher "# ")
+	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display
+	     (string-join
+	      (list
+	       "mount" "-t" "9p" "-o"
+	       (utils:emit-arg-alist
+		'(("trans" . "virtio")
+		  ("msize" . "104857600")
+		  ("ro")))
+	       "mirrors" "/var/spool/apt-mirror")
+	      " ")
+	     expect-port)
+	    (newline expect-port)
 	    (expect
 	     ((matcher "# ")
 	      (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
-	      (newline expect-port)))))
+	      (newline expect-port)))))))
 	(expect
 	 ((matcher "# ")
 	  (display "apt update" expect-port)
