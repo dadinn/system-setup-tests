@@ -168,9 +168,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	  (utils:path temp-path "drives"))
 	 (drive-configs
 	  (list
-	   (cons (utils:path drives-path "boot.img") "1G")
-	   (cons (utils:path drives-path "zfs1.img") "4G")
-	   (cons (utils:path drives-path "zfs2.img") "4G")))
+	   (cons (utils:path drives-path "main.img") "4G")))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (help? (hash-ref options 'help)))
