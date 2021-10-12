@@ -157,6 +157,30 @@ Quiting interactive mode is done by typing the `quit' command."
      (description
       "This usage help..."))))
 
+(define tests-spec
+  '(("debian-buster-luks" .
+     (("os" . "debian")
+      ("release" . "buster")
+      ("iso" .
+       (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+	("filename" . "debian-live-10.3.0-amd64-standard.iso")))
+      ("drives" .
+       ((("name" . "main.img")
+	 ("size" . "4G")
+	 ("if" . "virtio"))))
+      ("boot" . "bios")))
+    ("debian-bullseye-luks" .
+     (("os" . "debian")
+      ("release" . "bullseye")
+      ("iso" .
+       (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+	("filename" . "debian-live-11.1.0-amd64-standard.iso")))))
+    ("archlinux-luks" .
+     (("os" . "archlinux")
+      ("iso" .
+       (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
+	("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
+
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
@@ -172,6 +196,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (cons (utils:path drives-path "main.img") "4G")))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
+	 (config (assoc-ref tests-spec name))
+
 	 (live-username "user")
 	 (live-password "live")
 	 (hostname "shitfuck")
