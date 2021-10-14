@@ -267,7 +267,16 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "# ")
-	  (display "mount -t 9p -o trans=virtio,msize=104857600,ro sources /mnt/sources" expect-port)
+	  (display
+	   (string-join
+	    (list
+	     "mount" "-t" "9p" "-o"
+	     (utils:emit-arg-alist
+	      '(("trans" . "virtio")
+		("msize" . "104857600")
+		"ro"))
+	     "sources" "/mnt/sources")
+	    " ") expect-port)
 	  (newline expect-port)))
 	(cond
 	 (sync-mirror?
@@ -285,8 +294,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 		'(("trans" . "virtio")
 		  ("msize" . "104857600")))
 	       "mirrors" "/var/spool/apt-mirror")
-	      " ")
-	     expect-port)
+	      " ") expect-port)
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
@@ -328,7 +336,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	       (utils:emit-arg-alist
 		'(("trans" . "virtio")
 		  ("msize" . "104857600")
-		  ("ro")))
+		  "ro"))
 	       "mirrors" "/var/spool/apt-mirror")
 	      " ")
 	     expect-port)
