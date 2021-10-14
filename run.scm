@@ -298,11 +298,11 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
-	    (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb \\1 \\2 main contrib;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	    (display "grep '^deb ' /etc/apt/sources.list | sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb \\1 \\2 main contrib;g' > /tmp/mirror.list" expect-port)
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
-	    (display "sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' /etc/apt/sources.list | grep '^deb ' > /tmp/mirror.list" expect-port)
+	    (display "grep '^deb ' /etc/apt/sources.list | sed -E 's;^deb ([^ ]+) ([^ ]+) main.*$;clean \\1;g' >> /tmp/mirror.list" expect-port)
 	    (newline expect-port)))
 	  (utils:println "Finished synchronising apt-mirror!")
 	  (exit 0))
