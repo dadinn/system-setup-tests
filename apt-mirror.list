@@ -1,0 +1,7 @@
+# Watch out these will require around 200Gb space
+
+deb http://deb.debian.org/debian/ stretch main contrib
+deb http://deb.debian.org/debian/ buster main contrib
+deb http://deb.debian.org/debian/ bullseye main contrib
+
+clean http://deb.debian.org/debian/
