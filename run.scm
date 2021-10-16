@@ -164,7 +164,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (cdrom-path (hash-ref options 'cdrom))
 	 (temp-path (hash-ref options 'temp))
 	 (logs-path (utils:path temp-path "logs"))
-	 (mirror-path (utils:path temp-path "mirror"))
+	 (mirror-path (utils:path temp-path "mirrors" "apt"))
 	 (drives-path
 	  (utils:path temp-path "drives"))
 	 (drive-configs
