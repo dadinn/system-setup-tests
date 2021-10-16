@@ -190,7 +190,7 @@ Valid options are:
       (error "Live ISO image must be specified!"))
      ((and (not use-network?) (not (utils:directory? mirror-path)))
       (error "Not using network, yet local mirror directory doesn't exist!.
-Please either run with networking enabled, or synchronise apt-mirror first!"))
+Either run with networking enabled, or synchronise apt-mirror first!"))
      (else
       (when (not (utils:directory? drives-path))
 	(utils:mkdir-p drives-path))
@@ -312,9 +312,11 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	   ((matcher "# ")
 	    (display "apt-mirror" expect-port)
 	    (newline expect-port)))
-	  (utils:println "Finished synchronising apt-mirror!")
-	  (exit 0))
-	 ((not use-network?)
+	  (expect
+	   ((matcher "# ")
+	    (utils:println "Finished synchronising apt-mirror!"))))
+	 (else
+	  (when (and (not use-network?))
 	  (expect
 	   ((matcher "# ")
 	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
@@ -336,7 +338,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	    (expect
 	     ((matcher "# ")
 	      (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
-	      (newline expect-port)))))))
+	      (newline expect-port))))))
 	(expect
 	 ((matcher "# ")
 	  (display "apt update" expect-port)
@@ -418,7 +420,7 @@ Please either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "Ready to finish installation and reboot the system\\? \\[Y/n\\]")
-	  (newline expect-port))))
+	  (newline expect-port))))))
 	  (lambda ()
 	    (popen:close-pipe expect-port)
 	    (utils:println "Terminated QEMU process!"))))))))
