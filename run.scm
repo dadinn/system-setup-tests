@@ -427,7 +427,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port))))))
 	  (lambda ()
 	    (popen:close-pipe expect-port)
-	    (utils:println "Terminated QEMU process!"))))))))
+	    (utils:println "Terminated QEMU process!")
+	    (close-port log-port))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
