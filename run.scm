@@ -172,6 +172,13 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (cons (utils:path drives-path "main.img") "4G")))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
+	 (live-username "user")
+	 (live-password "live")
+	 (hostname "shitfuck")
+	 (sudo-username "fuckshit")
+	 (sudo-password "fuckshit")
+	 (root-dev "/dev/vda")
+	 (luks-passhprase "fuckshit")
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
@@ -227,14 +234,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	       #:mirrors mirror-path
 	       #:sources project-path
 	       #:drives drive-configs))
-	     (matcher (init-matcher logs-path))
-	     (live-username "user")
-	     (live-password "live")
-	     (hostname "shitfuck")
-	     (sudo-username "fuckshit")
-	     (sudo-password "fuckshit")
-	     (root-dev "/dev/vda")
-	     (luks-passhprase "fuckshit"))
+	     (matcher (init-matcher logs-path)))
 	(dynamic-wind
 	  (const #t)
 	  (lambda ()
