@@ -87,7 +87,15 @@ Quiting interactive mode is done by typing the `quit' command."
 	      (regex:string-match pattern stuff))
 	    #f)))))
 
-(define* (run-qemu #:key name memory network? cdrom sources mirrors drives)
+(define* (run-qemu
+	  #:key name memory network? uefi? cdrom sources mirrors drives-path drives
+	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
+	  (ovmf-vars-file "/usr/share/OVMF/OVMF_VARS.fd"))
+  (when uefi?
+    (cond
+     ((file-exists? ovmf-vars-file)
+      (copy-file ovmf-vars-file (utils:path drives-path (basename ovmf-vars-file))))
+     (else (error "OVMF_VARS file doesn't exist!" ovmf-vars-file))))
   (let ((port
 	 (apply popen:open-pipe* OPEN_BOTH
 	  `("qemu-system-x86_64"
@@ -108,6 +116,20 @@ Quiting interactive mode is done by typing the `quit' command."
 		     ("if" . "virtio")
 		     ("media" . "disk")))))
 	       drives)
+	    ,@(if uefi?
+	       (list
+		"-drive"
+		(utils:emit-arg-alist
+		 `("readonly"
+		   ("if" . "pflash")
+		   ("format" . "raw")
+		   ("file" . ,ovmf-code-file)))
+		"-drive"
+		(utils:emit-arg-alist
+		 `(("if" . "pflash")
+		   ("format" . "raw")
+		   ("file" . ,(utils:path drives-path (basename ovmf-vars-file))))))
+	       '())
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	      `("local" "readonly"
@@ -255,6 +277,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	      (run-qemu
 	       #:name name
 	       #:memory "4096"
+	       #:uefi? #t
+	       #:drives-path drives-path
 	       #:cdrom cdrom-path
 	       #:network? (or use-network? sync-mirror?)
 	       #:mirrors mirror-path
