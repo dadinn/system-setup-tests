@@ -200,11 +200,11 @@ Quiting interactive mode is done by typing the `quit' command."
 
 	 (live-username "user")
 	 (live-password "live")
-	 (hostname "shitfuck")
-	 (sudo-username "fuckshit")
-	 (sudo-password "fuckshit")
+	 (hostname "testing")
+	 (sudo-username "testing")
+	 (sudo-password "password")
 	 (root-dev "/dev/vda")
-	 (luks-passhprase "fuckshit")
+	 (luks-passhprase "passphrase")
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
