@@ -353,22 +353,23 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	(when (not use-network?)
 	  (expect
 	   ((matcher "# ")
-	    (display
-	     "mkdir -p /mnt/instroot/var/spool/apt-mirror"
-	     expect-port)
+	    (display "apt install -y nginx" expect-port)
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
-	    (display
-	     "mount --bind /var/spool/apt-mirror /mnt/instroot/var/spool/apt-mirror"
-	     expect-port)
-	    (newline expect-port))))
+	    (display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "systemctl restart nginx" expect-port)
+	    (newline expect-port)
+	    (sleep 10))))
 	(expect
 	 ((matcher "# ")
 	  (format expect-port "/mnt/sources/debian-setup/install.scm -A -n ~A -s ~A --password ~A ~A\n"
 	   hostname sudo-username sudo-password
 	   (if (not use-network?)
-	       "-m file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/"
+	       "-m http://localhost:8080/debian"
 	       ""))))
 	(expect
 	 ((matcher "Shutting down the system...")
