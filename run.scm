@@ -369,7 +369,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	   hostname sudo-username sudo-password
 	   (if (not use-network?)
 	       "-m file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/"
-	       "")))))))
+	       ""))))
+	(expect
+	 ((matcher "Shutting down the system...")
+	  (sleep 10))))))
 	  (lambda ()
 	    (popen:close-pipe expect-port)
 	    (utils:println "Terminated QEMU process!")
