@@ -98,6 +98,16 @@ Quiting interactive mode is done by typing the `quit' command."
 	    ;;"-smbios" "uefi=on")
 	    ,@(if cdrom ; boot from CD-ROM the first time
 	       (list "-boot" "once=d" "-cdrom" cdrom))
+	    ,@(srfi1:append-map
+	       (lambda (conf)
+		 (list
+		  "-drive"
+		  (utils:emit-arg-alist
+		   `(("file" . ,(car conf))
+		     ("format" . "qcow2")
+		     ("if" . "virtio")
+		     ("media" . "disk")))))
+	       drives)
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	      `("local" "readonly"
@@ -109,17 +119,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	     `("local"
 	       ("path" . ,mirrors)
 	       ("mount_tag" . "mirrors")
-	       ("security_model" . "mapped")))
-	    ,@(srfi1:append-map
-	       (lambda (conf)
-		 (list
-		  "-drive"
-		  (utils:emit-arg-alist
-		   `(("file" . ,(car conf))
-		     ("format" . "qcow2")
-		     ("if" . "virtio")
-		     ("media" . "disk")))))
-	       drives)))))
+	       ("security_model" . "mapped")))))))
     (setvbuf port 'none)
     (set-port-encoding! port "UTF-8")
     port))
