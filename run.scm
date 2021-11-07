@@ -306,7 +306,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
-	    (display "cp /mnt/sources/tests/apt-mirror.list /etc/apt/mirror.list" expect-port)
+	    (display "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/" expect-port)
 	    (newline expect-port)))
 	  (expect
 	   ((matcher "# ")
