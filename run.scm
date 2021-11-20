@@ -65,7 +65,7 @@ Quiting interactive mode is done by typing the `quit' command."
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
 
 (define* (run-qemu
-	  #:key name memory network? uefi? cdrom sources mirrors drives-path drives
+	  #:key name memory network? cdrom-path sources-path mirrors-path drives-path drive-specs uefi?
 	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
 	  (ovmf-vars-file "/usr/share/OVMF/OVMF_VARS.fd"))
   (when uefi?
@@ -80,19 +80,18 @@ Quiting interactive mode is done by typing the `quit' command."
 	    "-nographic"
 	    ,@(if (not network?)  (list "-nic" "none") '())
 	    "-m" ,(or memory "4096")
-	    ;;"-smbios" "uefi=on")
-	    ,@(if cdrom ; boot from CD-ROM the first time
-	       (list "-boot" "once=d" "-cdrom" cdrom))
+	    ,@(if cdrom-path ; boot from CD-ROM the first time
+	       (list "-boot" "once=d" "-cdrom" cdrom-path))
 	    ,@(srfi1:append-map
-	       (lambda (conf)
+	       (lambda (spec)
 		 (list
 		  "-drive"
 		  (utils:emit-arg-alist
-		   `(("file" . ,(car conf))
+		   `(("file" . ,(utils:path drives-path (assoc-ref spec "name")))
 		     ("format" . "qcow2")
-		     ("if" . "virtio")
+		     ("if" . (assoc-ref spec "if"))
 		     ("media" . "disk")))))
-	       drives)
+	       drive-specs)
 	    ,@(if uefi?
 	       (list
 		"-drive"
@@ -110,13 +109,13 @@ Quiting interactive mode is done by typing the `quit' command."
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	      `("local" "readonly"
-		("path" . ,sources)
+		("path" . ,sources-path)
 		("mount_tag" . "sources")
 		("security_model" . "mapped")))
 	    "-virtfs"
 	    ,(utils:emit-arg-alist
 	     `("local"
-	       ("path" . ,mirrors)
+	       ("path" . ,mirrors-path)
 	       ("mount_tag" . "mirrors")
 	       ("security_model" . "mapped")))))))
     (setvbuf port 'none)
