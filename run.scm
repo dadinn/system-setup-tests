@@ -152,7 +152,7 @@ Quiting interactive mode is done by typing the `quit' command."
      (description "Name to identify test execution.")
      (value #t)
      (value-arg "TEXT")
-     (default "testing"))
+     (default "debian-buster-luks"))
     (cdrom
      (description
       "Path to Live ISO file")
@@ -190,7 +190,14 @@ Quiting interactive mode is done by typing the `quit' command."
        ((("name" . "main.img")
 	 ("size" . "4G")
 	 ("if" . "virtio"))))
-      ("boot" . "bios")))
+      ("boot" . "bios")
+      ("init-instroot" .
+       (("rootdev" . "/dev/vda")
+	("swapsize" . "100M")
+	("passphrase" . "asonetuh")))
+      ("bootstrap" .
+       (("os" . "debian")
+	("password" . "asonetuh")))))
     ("debian-bullseye-luks" .
      (("os" . "debian")
       ("release" . "bullseye")
