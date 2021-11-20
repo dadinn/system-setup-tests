@@ -64,29 +64,6 @@ Quiting interactive mode is done by typing the `quit' command."
 (define (printable-char? c)
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
 
-(define (init-matcher logs-path)
-  (lambda (pattern)
-    (let ((start-time (current-time)))
-      (lambda (s eof?)
-	(if (not eof?)
-	    ;;This is needed to support matching against output with null characters
-	    (let ((stuff (string-filter printable-char? s)))
-	      (with-output-to-file
-		  (utils:path
-		   logs-path
-		   (string-append
-		    "expect_"
- 		    (strftime "%y%m%d_%H%M%S" (localtime start-time))
-		    ".log"))
-		(lambda ()
-		  (display (string-append "EXPECTING: " pattern))
-		  (newline)
-		  (display "MATCHING AGAINST:")
-		  (newline)
-		  (display stuff)))
-	      (regex:string-match pattern stuff))
-	    #f)))))
-
 (define* (run-qemu
 	  #:key name memory network? uefi? cdrom sources mirrors drives-path drives
 	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
@@ -209,6 +186,29 @@ Quiting interactive mode is done by typing the `quit' command."
       ("iso" .
        (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
 	("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
+
+(define (init-matcher logs-path)
+  (lambda (pattern)
+    (let ((start-time (current-time)))
+      (lambda (s eof?)
+	(if (not eof?)
+	    ;;This is needed to support matching against output with null characters
+	    (let ((stuff (string-filter printable-char? s)))
+	      (with-output-to-file
+		  (utils:path
+		   logs-path
+		   (string-append
+		    "expect_"
+ 		    (strftime "%y%m%d_%H%M%S" (localtime start-time))
+		    ".log"))
+		(lambda ()
+		  (display (string-append "EXPECTING: " pattern))
+		  (newline)
+		  (display "MATCHING AGAINST:")
+		  (newline)
+		  (display stuff)))
+	      (regex:string-match pattern stuff))
+	    #f)))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
