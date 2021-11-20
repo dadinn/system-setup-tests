@@ -190,7 +190,7 @@ Quiting interactive mode is done by typing the `quit' command."
        ((("name" . "main.img")
 	 ("size" . "4G")
 	 ("if" . "virtio"))))
-      ("boot" . "bios")
+      ("uefi" . #f)
       ("init-instroot" .
        (("rootdev" . "/dev/vda")
 	("swapsize" . "100M")
