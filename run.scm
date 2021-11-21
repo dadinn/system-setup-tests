@@ -258,8 +258,8 @@ Quiting interactive mode is done by typing the `quit' command."
        (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
 	("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
 
-(define (resolve-iso-path spec data-path)
-  (let ((iso-path (utils:path data-path "isos" (utils:assoc-get spec "guest" "iso" "filename"))))
+(define (resolve-iso-path data-path spec)
+  (let ((iso-path (utils:path data-path "isos" (assoc-ref spec "filename"))))
     (cond
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
@@ -366,7 +366,9 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (assoc-ref
 	    os-mirror-type
 	    (utils:assoc-get test-spec "guest" "os"))))
-	 (cdrom-path (resolve-iso-path test-spec data-path))
+	 (cdrom-path
+	  (resolve-iso-path data-path
+	   (utils:assoc-get test-spec "guest" "iso")))
 	 (temp-path (hash-ref options 'temp))
 	 (test-path (utils:path temp-path test-name))
 	 (logs-path (utils:path test-path "logs"))
