@@ -142,14 +142,22 @@ Quiting interactive mode is done by typing the `quit' command."
     (use-network
      (single-char #\N)
      (description "Use network for all package dependencies, and disable local apt-mirror."))
-    (temp
-     (single-char #\t)
+    (data
+     (single-char #\d)
      (description
-      "Path to store temporary files, logs, mirrors, etc.")
+      "Path to store temporary mirrors, isos, etc.")
      (value #t)
      (value-arg "path")
      (predicate ,utils:directory?)
      (default "/var/tmp/system-setup"))
+    (temp
+     (single-char #\t)
+     (description
+      "Path to store temporary test files, including drives, logs, etc.")
+     (value #t)
+     (value-arg "path")
+     (predicate ,utils:directory?)
+     (default "/tmp/system-setup"))
     (help
      (single-char #\h)
      (description
@@ -192,8 +200,8 @@ Quiting interactive mode is done by typing the `quit' command."
        (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
 	("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
 
-(define (resolve-iso-path spec temp-path)
-  (let ((iso-path (utils:path temp-path "isos" (utils:assoc-get spec "iso" "filename"))))
+(define (resolve-iso-path spec data-path)
+  (let ((iso-path (utils:path data-path "isos" (utils:assoc-get spec "guest" "iso" "filename"))))
     (cond
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
@@ -275,25 +283,33 @@ Quiting interactive mode is done by typing the `quit' command."
    (if (not use-network?)
     "-m http://localhost:8080/debian"
     "")))
+
+(define os-mirror-type
+  '(("debian" . "apt")))
+
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
-	 (name (hash-ref options 'name))
-	 (cdrom-path (hash-ref options 'cdrom))
+	 (test-name (hash-ref options 'name))
+	 (test-spec (assoc-ref tests-spec test-name))
+	 (data-path (hash-ref options 'data))
+	 (mirror-path
+	  (utils:path
+	   data-path "mirrors"
+	   (assoc-ref
+	    os-mirror-type
+	    (utils:assoc-get test-spec "guest" "os"))))
+	 (cdrom-path (resolve-iso-path test-spec data-path))
 	 (temp-path (hash-ref options 'temp))
-	 (logs-path (utils:path temp-path "logs"))
-	 (mirror-path (utils:path temp-path "mirrors" "apt"))
-	 (drives-path
-	  (utils:path temp-path "drives"))
-	 (drive-configs
-	  (list
-	   (cons (utils:path drives-path "main.img") "4G")))
+	 (test-path (utils:path temp-path test-name))
+	 (logs-path (utils:path test-path "logs"))
+	 (drives-path (utils:path test-path "drives"))
+	 (drive-specs (utils:assoc-get test-spec "guest" "drives"))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
-	 (config (assoc-ref tests-spec name))
-
-	 (live-username "user")
-	 (live-password "live")
+	 ;; spec stuff
+	 (live-username (utils:assoc-get test-spec "guest" "username"))
+	 (live-password (utils:assoc-get test-spec "guest" "password"))
 	 (hostname "testing")
 	 (sudo-username "testing")
 	 (sudo-password "password")
@@ -326,12 +342,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (when (and sync-mirror? (not (utils:directory? mirror-path)))
 	(utils:mkdir-p mirror-path))
       (for-each
-       (lambda (config)
-	 (let ((path (car config))
-	       (size (cdr config)))
+       (lambda (spec)
+	 (let* ((filename (assoc-ref spec "name"))
+		(path (utils:path drives-path filename))
+		(size (assoc-ref spec "size")))
 	   (when (not (file-exists? path))
 	     (system* "qemu-img" "create" "-f" "qcow2" path size))))
-       drive-configs)
+       drive-specs)
       (let* ((start-time (current-time))
 	     (log-port
 	      (open-output-file
@@ -339,7 +356,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		logs-path
 		(string-append
 		 (strftime "%y%m%d_%H%M%S" (localtime start-time))
-		 "_" name
+		 "_" test-name
 		 ".log"))))
 	     (expect-char-proc
 	      (lambda (c)
@@ -347,15 +364,14 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		(display c)))
 	     (expect-port
 	      (run-qemu
-	       #:name name
+	       #:name test-name
 	       #:memory "4096"
-	       #:uefi? #t
-	       #:drives-path drives-path
-	       #:cdrom cdrom-path
 	       #:network? (or use-network? sync-mirror?)
-	       #:mirrors mirror-path
-	       #:sources project-path
-	       #:drives drive-configs))
+	       #:sources-path project-path
+	       #:mirrors-path mirror-path
+	       #:cdrom-path cdrom-path
+	       #:drives-path drives-path
+	       #:drive-specs drive-specs))
 	     (matcher (init-matcher logs-path)))
 	(dynamic-wind
 	  (const #t)
@@ -369,11 +385,11 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "debian login:")
-	  (display "user" expect-port)
+	  (display live-username expect-port)
 	  (newline expect-port)))
 	(expect
 	 ((matcher "Password:")
-	  (display "live" expect-port)
+	  (display live-password expect-port)
 	  (newline expect-port)))
 	(expect
 	 ((matcher "\\$ ")
@@ -471,7 +487,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "# ")
-	  (format expect-port "/mnt/sources/init-instroot/init-instroot.scm -r /dev/vda -s 100M -A --passphrase ~A\n" luks-passhprase)))
+	  (call-init-instroot test-spec expect-port)))
 	(when (not use-network?)
 	  (expect
 	   ((matcher "# ")
@@ -488,18 +504,16 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	    (sleep 10))))
 	(expect
 	 ((matcher "# ")
-	  (format expect-port "/mnt/sources/debian-setup/install.scm -A -n ~A -s ~A --password ~A ~A\n"
-	   hostname sudo-username sudo-password
-	   (if (not use-network?)
-	       "-m http://localhost:8080/debian"
-	       ""))))
+	  (call-debian-setup test-spec expect-port use-network?)))
 	(expect
 	 ((matcher "Shutting down the system...")
 	  (sleep 10))))))
 	  (lambda ()
 	    (popen:close-pipe expect-port)
-	    (utils:println "Terminated QEMU process!")
-	    (close-port log-port))))))))
+	    (close-port log-port)
+	    (newline)
+	    (display "Terminated QEMU process!")
+	    (newline))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
