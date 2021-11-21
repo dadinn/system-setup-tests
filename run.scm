@@ -128,7 +128,7 @@ Quiting interactive mode is done by typing the `quit' command."
      (description "Name to identify test execution.")
      (value #t)
      (value-arg "TEXT")
-     (default "debian-buster-luks"))
+     (default "debian-bullseye-zfs"))
     (cdrom
      (description
       "Path to Live ISO file")
@@ -180,6 +180,37 @@ Quiting interactive mode is done by typing the `quit' command."
 	("uefi" . #f)))
       ("instroot" .
        (("rootdev" . "/dev/vda")
+	("swapsize" . "100M")
+	("passphrase" . "asonetuh")))
+      ("install" .
+       (("os" . "debian")
+	("hostname" . "besenczy")
+	("sudouser" . "dadinn")
+	("password" . "asonetuh")))))
+    ("debian-bullseye-zfs" .
+     (("guest" .
+       (("os" . "debian")
+	("release" . "bullseye")
+	("username" . "user")
+	("password" . "live")
+	("iso" .
+	 (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+	  ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
+	("drives" .
+	 ((("name" . "boot.img")
+	   ("size" . "1G")
+	   ("if" . "virtio"))
+	  (("name" . "zfs1.img")
+	   ("size" . "3G")
+	   ("if" . "virtio"))
+	  (("name" . "zfs2.img")
+	   ("size" . "3G")
+	   ("if" . "virtio"))))
+	("uefi" . #f)))
+      ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
+      ("instroot" .
+       (("zpool" . "storage")
+	("bootdev" . "/dev/vda")
 	("swapsize" . "100M")
 	("passphrase" . "asonetuh")))
       ("install" .
