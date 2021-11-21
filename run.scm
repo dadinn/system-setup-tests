@@ -260,6 +260,15 @@ Quiting interactive mode is done by typing the `quit' command."
 	      (regex:string-match pattern stuff))
 	    #f)))))
 
+(define (call-init-zpool spec port)
+  (let ((args (assoc-ref spec "zpool")))
+    (if args
+      (format port
+       "/mnt/sources/init-instroot/init-instroot.scm -A -p ~A -Z ~A\n"
+       (utils:assoc-get spec "instroot" "passphrase")
+       (string-join args " "))
+      (newline port))))
+
 (define (call-init-instroot spec port)
   (format port
    "/mnt/sources/init-instroot/init-instroot.scm -A ~A\n"
@@ -516,6 +525,9 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 ((matcher "# ")
 	  (display "apt install -y guile-2.2" expect-port)
 	  (newline expect-port)))
+	(expect
+	 ((matcher "# ")
+	  (call-init-zpool test-spec expect-port)))
 	(expect
 	 ((matcher "# ")
 	  (call-init-instroot test-spec expect-port)))
