@@ -65,7 +65,7 @@ Quiting interactive mode is done by typing the `quit' command."
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
 
 (define* (run-qemu
-	  #:key name memory network? cdrom-path sources-path mirrors-path drives-path drive-specs uefi?
+	  #:key name memory network? sources-path mirrors-path cdrom-path drives-path drive-specs uefi?
 	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
 	  (ovmf-vars-file "/usr/share/OVMF/OVMF_VARS.fd"))
   (when uefi?
@@ -89,7 +89,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		  (utils:emit-arg-alist
 		   `(("file" . ,(utils:path drives-path (assoc-ref spec "name")))
 		     ("format" . "qcow2")
-		     ("if" . (assoc-ref spec "if"))
+		     ("if" . ,(assoc-ref spec "if"))
 		     ("media" . "disk")))))
 	       drive-specs)
 	    ,@(if uefi?
