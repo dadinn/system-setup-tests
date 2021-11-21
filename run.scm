@@ -81,7 +81,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	    ,@(if (not network?)  (list "-nic" "none") '())
 	    "-m" ,(or memory "4096")
 	    ,@(if cdrom-path ; boot from CD-ROM the first time
-	       (list "-boot" "once=d" "-cdrom" cdrom-path))
+	       (list "-boot" "once=d" "-cdrom" cdrom-path)
+	       (list "-boot" "order=c"))
 	    ,@(srfi1:append-map
 	       (lambda (spec)
 		 (list
