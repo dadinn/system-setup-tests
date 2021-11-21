@@ -159,6 +159,9 @@ Quiting interactive mode is done by typing the `quit' command."
      (value-arg "path")
      (predicate ,utils:directory?)
      (default "/tmp/system-setup"))
+    (verify-only
+     (single-char #\V)
+     (description "Run verification process only on existing test results."))
     (help
      (single-char #\h)
      (description
@@ -371,6 +374,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (drive-specs (utils:assoc-get test-spec "guest" "drives"))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
+	 (verify-only? (hash-ref options 'verify-only))
 	 ;; spec stuff
 	 (live-username (utils:assoc-get test-spec "guest" "username"))
 	 (live-password (utils:assoc-get test-spec "guest" "password"))
