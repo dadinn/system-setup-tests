@@ -215,6 +215,60 @@ Quiting interactive mode is done by typing the `quit' command."
 	      (regex:string-match pattern stuff))
 	    #f)))))
 
+(define (call-init-instroot spec port)
+  (format port
+   "/mnt/sources/init-instroot/init-instroot.scm -A ~A\n"
+   (srfi1:fold
+    (lambda (entry acc)
+      (let ((key (car entry))
+	    (val (cdr entry)))
+	(string-append
+	 acc
+	 (cond
+	  ((eq? "passphrase" key)
+	   (string-append " -p " val))
+	  ((eq? "rootdev" key)
+	   (string-append " -r " val))
+	  ((eq? "bootdev" key)
+	   (string-append " -b " val))
+	  ((eq? "zpool" key)
+	   (string-append " -z " val))
+	  ((eq? "swapsize" key)
+	   (string-append " -s " val))
+	  ((eq? "swapfiles" key)
+	   (string-append " -S " val))
+	  ((eq? "luks-devs" key)
+	   (string-append " -v "
+	    (utils:emit-arg-alist val
+	     #:pair-separator #\:
+	     #:list-separator #\,)))
+	  ((eq? "luksv2" key)
+	   (if val " -L" ""))
+	  ((eq? "uefi" key)
+	   (if val " -E" ""))
+	  (else "")))))
+    "" (assoc-ref spec "instroot"))))
+
+(define* (call-debian-setup spec port #:optional use-network?)
+  (format port
+   "/mnt/sources/debian-setup/install.scm -AS ~A ~A\n"
+   (srfi1:fold
+    (lambda (entry acc)
+      (let ((key (car entry))
+	    (val (cdr entry)))
+	(string-append acc
+	 (cond
+	  ((eq? "hostname" key)
+	   (string-append " -n " val))
+	  ((eq? "sudouser" key)
+	   (string-append " -u " val))
+	  ((eq? "password" key)
+	   (string-append " -p " val))
+	  (else "")))))
+    "" (assoc-ref spec "install"))
+   (if (not use-network?)
+    "-m http://localhost:8080/debian"
+    "")))
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
