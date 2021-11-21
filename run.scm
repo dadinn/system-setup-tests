@@ -378,11 +378,6 @@ Quiting interactive mode is done by typing the `quit' command."
 	 ;; spec stuff
 	 (live-username (utils:assoc-get test-spec "guest" "username"))
 	 (live-password (utils:assoc-get test-spec "guest" "password"))
-	 (hostname "testing")
-	 (sudo-username "testing")
-	 (sudo-password "password")
-	 (root-dev "/dev/vda")
-	 (luks-passhprase "passphrase")
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
