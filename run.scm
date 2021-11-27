@@ -113,12 +113,15 @@ Quiting interactive mode is done by typing the `quit' command."
 		("path" . ,sources-path)
 		("mount_tag" . "sources")
 		("security_model" . "mapped")))
-	    "-virtfs"
-	    ,(utils:emit-arg-alist
-	     `("local"
-	       ("path" . ,mirrors-path)
-	       ("mount_tag" . "mirrors")
-	       ("security_model" . "mapped")))))))
+	    ,@(if (and mirrors-path (not network?))
+	       (list
+		"-virtfs"
+		(utils:emit-arg-alist
+		 `("local"
+		   ("path" . ,mirrors-path)
+		   ("mount_tag" . "mirrors")
+		   ("security_model" . "mapped"))))
+	       '())))))
     (setvbuf port 'none)
     (set-port-encoding! port "UTF-8")
     port))
