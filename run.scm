@@ -107,12 +107,15 @@ Quiting interactive mode is done by typing the `quit' command."
 		   ("format" . "raw")
 		   ("file" . ,(utils:path drives-path (basename ovmf-vars-file))))))
 	       '())
-	    "-virtfs"
-	    ,(utils:emit-arg-alist
-	      `("local" "readonly"
-		("path" . ,sources-path)
-		("mount_tag" . "sources")
-		("security_model" . "mapped")))
+	    ,@(if sources-path
+	       (list
+		"-virtfs"
+		(utils:emit-arg-alist
+		 `("local" "readonly"
+		   ("path" . ,sources-path)
+		   ("mount_tag" . "sources")
+		   ("security_model" . "mapped"))))
+	       '())
 	    ,@(if (and mirrors-path (not network?))
 	       (list
 		"-virtfs"
