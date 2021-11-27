@@ -554,7 +554,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (newline expect-port)))
 	(expect
 	 ((matcher "# ")
-	  (display "apt install -y guile-2.2" expect-port)
+	  (display "apt install -y guile-3.0" expect-port)
 	  (newline expect-port)))
 	(expect
 	 ((matcher "# ")
