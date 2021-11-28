@@ -165,9 +165,11 @@ Quiting interactive mode is done by typing the `quit' command."
      (value-arg "path")
      (predicate ,utils:directory?)
      (default "/tmp/system-setup"))
-    (verify-only
+    (verify
      (single-char #\V)
-     (description "Run verification process only on existing test results."))
+     (description "Run verification process only on existing test results for specific timastamp ID for run.")
+     (value #t)
+     (value-arg "RUNID"))
     (help
      (single-char #\h)
      (description
@@ -358,7 +360,7 @@ Quiting interactive mode is done by typing the `quit' command."
 (define os-mirror-type
   '(("debian" . "apt")))
 
-(define* (run-test #:key name spec temp-path data-path sources-path use-network? sync-mirror?)
+(define* (run-test #:key name spec temp-path data-path sources-path use-network? sync-mirror? verify-run)
   (let* ((mirror-path
 	  (utils:path
 	   data-path "mirrors"
@@ -566,7 +568,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (temp-path (hash-ref options 'temp))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
-	 (verify-only? (hash-ref options 'verify-only))
+	 (verify-run (hash-ref options 'verify))
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
@@ -590,9 +592,12 @@ Valid options are:
        #:temp-path
        (utils:path
 	temp-path
-	(strftime "%y%m%d_%H%M%S" (localtime start-time)))
+	(or verify-run
+	 (strftime "%y%m%d_%H%M%S"
+	  (localtime start-time))))
        #:use-network? use-network?
        #:sync-mirror? sync-mirror?
+       #:verify-run verify-run
        )))))
 
 
