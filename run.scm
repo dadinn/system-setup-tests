@@ -13,6 +13,7 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 regex) #:prefix regex:)
  ((ice-9 rdelim) #:prefix rdelim:)
  ((ice-9 readline) #:select (readline))
+ ((ice-9 format) #:select (format))
  ((ice-9 expect)))
 
 (define-macro (comment . args)
@@ -562,7 +563,86 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (close-port log-port)
 	  (newline)
 	  (display "Terminated QEMU process!")
-	  (newline)))))))
+	  (newline)))))
+    ;; VERIFY RUN
+    (when (not sync-mirror?)
+      (newline)
+      (format #t "Verifying results for ~A" name)
+      (newline)
+      (let* ((expect-char-proc
+	      (lambda (c)
+		(display c)))
+	     (expect-port
+	      (run-qemu
+	       #:name (string-append name "_verify")
+	       #:memory "4096"
+	       #:network? #f
+	       #:drives-path drives-path
+	       #:drive-specs drive-specs))
+	     (matcher (init-matcher logs-path))
+	     (passphrase (utils:assoc-get spec "instroot" "passphrase"))
+	     (hostname (utils:assoc-get spec "install" "hostname"))
+	     (sudouser (utils:assoc-get spec "install" "sudouser"))
+	     (password (utils:assoc-get spec "install" "password"))
+	     (rootdev (utils:assoc-get spec "instroot" "rootdev"))
+	     (rootdev (and rootdev (caddr (string-split rootdev #\/))))
+	     (bootdev (utils:assoc-get spec "instroot" "bootdev"))
+	     (zpool (utils:assoc-get spec "instroot" "zpool")))
+	(dynamic-wind
+	  (const #t)
+	  (lambda ()
+	    (expect
+	     ((matcher "verify1" "The highlighted entry will be executed automatically in [0-9]+s.")
+	      (newline expect-port)))
+	    (cond
+	     ((and rootdev bootdev)
+	      (expect
+	       ((matcher "verify2"
+		 (format #f "Please unlock disk ~A:"
+		  (string-append rootdev "1_crypt")))
+		(display passphrase expect-port)
+		(newline expect-port))))
+	     (rootdev
+	      (expect
+	       ((matcher "verify2"
+		 (format #f "Please unlock disk ~A:"
+		  (string-append rootdev "3_crypt")))
+		(display passphrase expect-port)
+		(newline expect-port))))
+	     (zpool
+	      (expect
+	       ((matcher "verify2"
+		 (format #f "Enter passphrase for '~A':" zpool))
+		(display passphrase expect-port)
+		(newline expect-port)))))
+	    (expect
+	     ((matcher "verify3" "login: ")
+	      (display sudouser expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify4" "Password: ")
+	      (display password expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify5" (format #f "~A@~A:~~\\$ " sudouser hostname))
+	      (display "lsblk" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify6" (format #f "~A@~A:~~\\$ " sudouser hostname))
+	      (display "systemctl poweroff" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify7" (format #f "\\[sudo\\] password for ~A: " sudouser))
+	      (display password expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify8" "reboot: Power down")
+	      (sleep 5))))
+	  (lambda ()
+	    (popen:close-pipe expect-port)
+	    (newline)
+	    (format #t "Finished verification for ~A!\n" name)
+	    (newline)))))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
