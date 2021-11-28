@@ -360,32 +360,215 @@ Quiting interactive mode is done by typing the `quit' command."
 (define os-mirror-type
   '(("debian" . "apt")))
 
-(define (main args)
-  (let* ((project-path (dirname (dirname (current-filename))))
-	 (options (utils:getopt-extra args options-spec))
-	 (test-name (hash-ref options 'name))
-	 (test-spec (assoc-ref tests-spec test-name))
-	 (data-path (hash-ref options 'data))
-	 (mirror-path
+(define* (run-test #:key name spec temp-path data-path sources-path use-network? sync-mirror?)
+  (let* ((mirror-path
 	  (utils:path
 	   data-path "mirrors"
 	   (assoc-ref
 	    os-mirror-type
-	    (utils:assoc-get test-spec "guest" "os"))))
+	    (utils:assoc-get spec "guest" "os"))))
 	 (cdrom-path
-	  (resolve-iso-path data-path
-	   (utils:assoc-get test-spec "guest" "iso")))
-	 (temp-path (hash-ref options 'temp))
-	 (test-path (utils:path temp-path test-name))
+	  (resolve-iso-path
+	   data-path
+	   (utils:assoc-get spec "guest" "iso")))
+	 (test-path (utils:path temp-path name))
 	 (logs-path (utils:path test-path "logs"))
 	 (drives-path (utils:path test-path "drives"))
-	 (drive-specs (utils:assoc-get test-spec "guest" "drives"))
+	 (drive-specs (utils:assoc-get spec "guest" "drives"))
+	 (live-username (utils:assoc-get spec "guest" "username"))
+	 (live-password (utils:assoc-get spec "guest" "password")))
+    ;;START
+    (when (and (not use-network?) (not (utils:directory? mirror-path)))
+      (error "Not using network, yet local mirror directory doesn't exist!.
+Either run with networking enabled, or synchronise apt-mirror first!"))
+    (when (not (utils:directory? drives-path))
+      (utils:mkdir-p drives-path))
+    (when (not (utils:directory? logs-path))
+      (utils:mkdir-p logs-path))
+    (when (and sync-mirror? (not (utils:directory? mirror-path)))
+      (utils:mkdir-p mirror-path))
+    (for-each
+     (lambda (spec)
+       (let* ((filename (assoc-ref spec "name"))
+	      (path (utils:path drives-path filename))
+	      (size (assoc-ref spec "size")))
+	 (when (not (file-exists? path))
+	   (system* "qemu-img" "create" "-f" "qcow2" path size))))
+     drive-specs)
+    (let* ((log-port
+	    (open-output-file
+	     (utils:path logs-path "run.log")))
+	   (expect-char-proc
+	    (lambda (c)
+	      (display c log-port)
+	      (display c)))
+	   (expect-port
+	    (run-qemu
+	     #:name name
+	     #:memory "4096"
+	     #:network? (or use-network? sync-mirror?)
+	     #:sources-path sources-path
+	     #:mirrors-path mirror-path
+	     #:cdrom-path cdrom-path
+	     #:drives-path drives-path
+	     #:drive-specs drive-specs))
+	   (matcher (init-matcher logs-path)))
+      (dynamic-wind
+	(const #t)
+	(lambda ()
+	  (expect
+	   ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
+	    (sleep 1)
+	    (display "\t" expect-port)
+	    (sleep 1)
+	    (display " console=ttyS0" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "debian login:")
+	    (display live-username expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "Password:")
+	    (display live-password expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "\\$ ")
+	    (display "sudo -i" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "export LC_ALL=C" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display "mkdir /mnt/sources" expect-port)
+	    (newline expect-port)))
+	  (expect
+	   ((matcher "# ")
+	    (display
+	     (string-join
+	      (list
+	       "mount" "-t" "9p" "-o"
+	       (utils:emit-arg-alist
+		'(("trans" . "virtio")
+		  ("msize" . "104857600")
+		  "ro"))
+	       "sources" "/mnt/sources")
+	      " ") expect-port)
+	    (newline expect-port)))
+	  (cond
+	   (sync-mirror?
+	    (expect
+	     ((matcher "# ")
+	      (display "mkdir -p /var/spool/apt-mirror" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display
+	       (string-join
+		(list
+		 "mount" "-t" "9p" "-o"
+		 (utils:emit-arg-alist
+		  '(("trans" . "virtio")
+		    ("msize" . "104857600")))
+		 "mirrors" "/var/spool/apt-mirror")
+		" ") expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display "apt update" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display "apt install -y apt-mirror" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display "apt-mirror" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (utils:println "Finished synchronising apt-mirror!"))))
+	   (else
+	    (when (and (not use-network?))
+	      (expect
+	       ((matcher "# ")
+		(display "mkdir -p /var/spool/apt-mirror" expect-port)
+		(newline expect-port)))
+	      (expect
+	       ((matcher "# ")
+		(display
+		 (string-join
+		  (list
+		   "mount" "-t" "9p" "-o"
+		   (utils:emit-arg-alist
+		    '(("trans" . "virtio")
+		      ("msize" . "104857600")
+		      "ro"))
+		   "mirrors" "/var/spool/apt-mirror")
+		  " ")
+		 expect-port)
+		(newline expect-port)
+		(expect
+		 ((matcher "# ")
+		  (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
+		  (newline expect-port))))))
+	    (expect
+	     ((matcher "# ")
+	      (display "apt update" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (display "apt install -y guile-3.0" expect-port)
+	      (newline expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (call-init-zpool spec expect-port)))
+	    (expect
+	     ((matcher "# ")
+	      (call-init-instroot spec expect-port)))
+	    (when (not use-network?)
+	      (expect
+	       ((matcher "# ")
+		(display "apt install -y nginx" expect-port)
+		(newline expect-port)))
+	      (expect
+	       ((matcher "# ")
+		(display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
+		(newline expect-port)))
+	      (expect
+	       ((matcher "# ")
+		(display "systemctl restart nginx" expect-port)
+		(newline expect-port)
+		(sleep 10))))
+	    (expect
+	     ((matcher "# ")
+	      (call-debian-setup spec expect-port use-network?)))
+	    (expect
+	     ((matcher "Shutting down the system...")
+	      (sleep 10))))))
+	(lambda ()
+	  (popen:close-pipe expect-port)
+	  (close-port log-port)
+	  (newline)
+	  (display "Terminated QEMU process!")
+	  (newline))))))
+
+(define (main args)
+  (let* ((project-path (dirname (dirname (current-filename))))
+	 (options (utils:getopt-extra args options-spec))
+	 (start-time (current-time))
+	 (test-name (hash-ref options 'name))
+	 (test-spec (assoc-ref tests-spec test-name))
+	 (data-path (hash-ref options 'data))
+	 (temp-path (hash-ref options 'temp))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (verify-only? (hash-ref options 'verify-only))
-	 ;; spec stuff
-	 (live-username (utils:assoc-get test-spec "guest" "username"))
-	 (live-password (utils:assoc-get test-spec "guest" "password"))
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
@@ -400,194 +583,19 @@ Valid options are:
 
 " (utils:usage options-spec)))
       (newline))
-     ((not cdrom-path)
-      (error "Live ISO image must be specified!"))
-     ((and (not use-network?) (not (utils:directory? mirror-path)))
-      (error "Not using network, yet local mirror directory doesn't exist!.
-Either run with networking enabled, or synchronise apt-mirror first!"))
      (else
-      (when (not (utils:directory? drives-path))
-	(utils:mkdir-p drives-path))
-      (when (not (utils:directory? logs-path))
-	(utils:mkdir-p logs-path))
-      (when (and sync-mirror? (not (utils:directory? mirror-path)))
-	(utils:mkdir-p mirror-path))
-      (for-each
-       (lambda (spec)
-	 (let* ((filename (assoc-ref spec "name"))
-		(path (utils:path drives-path filename))
-		(size (assoc-ref spec "size")))
-	   (when (not (file-exists? path))
-	     (system* "qemu-img" "create" "-f" "qcow2" path size))))
-       drive-specs)
-      (let* ((start-time (current-time))
-	     (log-port
-	      (open-output-file
-	       (utils:path
-		logs-path
-		(string-append
-		 (strftime "%y%m%d_%H%M%S" (localtime start-time))
-		 "_" test-name
-		 ".log"))))
-	     (expect-char-proc
-	      (lambda (c)
-		(display c log-port)
-		(display c)))
-	     (expect-port
-	      (run-qemu
-	       #:name test-name
-	       #:memory "4096"
-	       #:network? (or use-network? sync-mirror?)
-	       #:sources-path project-path
-	       #:mirrors-path mirror-path
-	       #:cdrom-path cdrom-path
-	       #:drives-path drives-path
-	       #:drive-specs drive-specs))
-	     (matcher (init-matcher logs-path)))
-	(dynamic-wind
-	  (const #t)
-	  (lambda ()
-	(expect
-	 ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
-	  (sleep 1)
-	  (display "\t" expect-port)
-	  (sleep 1)
-	  (display " console=ttyS0" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "debian login:")
-	  (display live-username expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "Password:")
-	  (display live-password expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "\\$ ")
-	  (display "sudo -i" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (display "export LC_ALL=C" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (display "mkdir /mnt/sources" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (display
-	   (string-join
-	    (list
-	     "mount" "-t" "9p" "-o"
-	     (utils:emit-arg-alist
-	      '(("trans" . "virtio")
-		("msize" . "104857600")
-		"ro"))
-	     "sources" "/mnt/sources")
-	    " ") expect-port)
-	  (newline expect-port)))
-	(cond
-	 (sync-mirror?
-	  (expect
-	   ((matcher "# ")
-	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display
-	     (string-join
-	      (list
-	       "mount" "-t" "9p" "-o"
-	       (utils:emit-arg-alist
-		'(("trans" . "virtio")
-		  ("msize" . "104857600")))
-	       "mirrors" "/var/spool/apt-mirror")
-	      " ") expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "apt update" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "apt install -y apt-mirror" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "apt-mirror" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (utils:println "Finished synchronising apt-mirror!"))))
-	 (else
-	  (when (and (not use-network?))
-	  (expect
-	   ((matcher "# ")
-	    (display "mkdir -p /var/spool/apt-mirror" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display
-	     (string-join
-	      (list
-	       "mount" "-t" "9p" "-o"
-	       (utils:emit-arg-alist
-		'(("trans" . "virtio")
-		  ("msize" . "104857600")
-		  "ro"))
-	       "mirrors" "/var/spool/apt-mirror")
-	      " ")
-	     expect-port)
-	    (newline expect-port)
-	    (expect
-	     ((matcher "# ")
-	      (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
-	      (newline expect-port))))))
-	(expect
-	 ((matcher "# ")
-	  (display "apt update" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (display "apt install -y guile-3.0" expect-port)
-	  (newline expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (call-init-zpool test-spec expect-port)))
-	(expect
-	 ((matcher "# ")
-	  (call-init-instroot test-spec expect-port)))
-	(when (not use-network?)
-	  (expect
-	   ((matcher "# ")
-	    (display "apt install -y nginx" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
-	    (newline expect-port)))
-	  (expect
-	   ((matcher "# ")
-	    (display "systemctl restart nginx" expect-port)
-	    (newline expect-port)
-	    (sleep 10))))
-	(expect
-	 ((matcher "# ")
-	  (call-debian-setup test-spec expect-port use-network?)))
-	(expect
-	 ((matcher "Shutting down the system...")
-	  (sleep 10))))))
-	  (lambda ()
-	    (popen:close-pipe expect-port)
-	    (close-port log-port)
-	    (newline)
-	    (display "Terminated QEMU process!")
-	    (newline))))))))
+      (run-test
+       #:name test-name
+       #:spec test-spec
+       #:sources-path project-path
+       #:data-path data-path
+       #:temp-path
+       (utils:path
+	temp-path
+	(strftime "%y%m%d_%H%M%S" (localtime start-time)))
+       #:use-network? use-network?
+       #:sync-mirror? sync-mirror?
+       )))))
 
 
 ;; Matenak mukodott Archlinux-szal:
