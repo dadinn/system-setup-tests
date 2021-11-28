@@ -280,7 +280,7 @@ Quiting interactive mode is done by typing the `quit' command."
     (lambda (id pattern)
       (lambda (s eof?)
 	(if (not eof?)
-	 (call-with-output-file (utils:path expect-path (string-append "match_" id ".log"))
+	 (call-with-output-file (utils:path expect-path (string-append "matcher_" id ".log"))
 	   (lambda (log-port)
 	     ;;This is needed to support matching against output with null characters
 	     (let ((stuff (string-filter printable-char? s)))
