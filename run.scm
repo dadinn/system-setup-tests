@@ -271,19 +271,17 @@ Quiting interactive mode is done by typing the `quit' command."
      (else (error "Cannot find ISO image!" iso-path)))))
 
 (define (init-matcher logs-path)
-  (lambda (pattern)
-    (let ((start-time (current-time)))
+  (let ((expect-path (utils:path logs-path "expect")))
+    (when (not (file-exists? expect-path))
+      (utils:mkdir-p expect-path))
+    (lambda (id pattern)
       (lambda (s eof?)
 	(if (not eof?)
 	    ;;This is needed to support matching against output with null characters
 	    (let ((stuff (string-filter printable-char? s)))
 	      (with-output-to-file
-		  (utils:path
-		   logs-path
-		   (string-append
-		    "expect_"
- 		    (strftime "%y%m%d_%H%M%S" (localtime start-time))
-		    ".log"))
+		  (utils:path expect-path
+			      (string-append "match_" id ".log"))
 		(lambda ()
 		  (display (string-append "EXPECTING: " pattern))
 		  (newline)
@@ -417,34 +415,34 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	(const #t)
 	(lambda ()
 	  (expect
-	   ((matcher "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
+	   ((matcher "boot1" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	    (sleep 1)
 	    (display "\t" expect-port)
 	    (sleep 1)
 	    (display " console=ttyS0" expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "debian login:")
+	   ((matcher "boot2" "debian login:")
 	    (display live-username expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "Password:")
+	   ((matcher "boot3" "Password:")
 	    (display live-password expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "\\$ ")
+	   ((matcher "boot4" "\\$ ")
 	    (display "sudo -i" expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "# ")
+	   ((matcher "boot5" "# ")
 	    (display "export LC_ALL=C" expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "# ")
+	   ((matcher "boot6" "# ")
 	    (display "mkdir /mnt/sources" expect-port)
 	    (newline expect-port)))
 	  (expect
-	   ((matcher "# ")
+	   ((matcher "boot7" "# ")
 	    (display
 	     (string-join
 	      (list
@@ -459,11 +457,11 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (cond
 	   (sync-mirror?
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror1" "# ")
 	      (display "mkdir -p /var/spool/apt-mirror" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror2" "# ")
 	      (display
 	       (string-join
 		(list
@@ -475,32 +473,32 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		" ") expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror3" "# ")
 	      (display "apt update" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror4" "# ")
 	      (display "apt install -y apt-mirror" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror5" "# ")
 	      (display "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror6" "# ")
 	      (display "apt-mirror" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "mirror7" "# ")
 	      (utils:println "Finished synchronising apt-mirror!"))))
 	   (else
 	    (when (and (not use-network?))
 	      (expect
-	       ((matcher "# ")
+	       ((matcher "mirror8" "# ")
 		(display "mkdir -p /var/spool/apt-mirror" expect-port)
 		(newline expect-port)))
 	      (expect
-	       ((matcher "# ")
+	       ((matcher "mirror9" "# ")
 		(display
 		 (string-join
 		  (list
@@ -514,42 +512,42 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		 expect-port)
 		(newline expect-port)
 		(expect
-		 ((matcher "# ")
+		 ((matcher "mirror10" "# ")
 		  (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
 		  (newline expect-port))))))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "test1" "# ")
 	      (display "apt update" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "test2" "# ")
 	      (display "apt install -y guile-3.0" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "test3" "# ")
 	      (call-init-zpool spec expect-port)))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "test4" "# ")
 	      (call-init-instroot spec expect-port)))
 	    (when (not use-network?)
 	      (expect
-	       ((matcher "# ")
+	       ((matcher "test5" "# ")
 		(display "apt install -y nginx" expect-port)
 		(newline expect-port)))
 	      (expect
-	       ((matcher "# ")
+	       ((matcher "test6"  "# ")
 		(display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
 		(newline expect-port)))
 	      (expect
-	       ((matcher "# ")
+	       ((matcher "test7" "# ")
 		(display "systemctl restart nginx" expect-port)
 		(newline expect-port)
 		(sleep 10))))
 	    (expect
-	     ((matcher "# ")
+	     ((matcher "test8" "# ")
 	      (call-debian-setup spec expect-port use-network?)))
 	    (expect
-	     ((matcher "Shutting down the system...")
+	     ((matcher "test9" "Shutting down the system...")
 	      (sleep 10))))))
 	(lambda ()
 	  (popen:close-pipe expect-port)
