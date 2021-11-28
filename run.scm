@@ -279,19 +279,24 @@ Quiting interactive mode is done by typing the `quit' command."
     (lambda (id pattern)
       (lambda (s eof?)
 	(if (not eof?)
-	    ;;This is needed to support matching against output with null characters
-	    (let ((stuff (string-filter printable-char? s)))
-	      (with-output-to-file
-		  (utils:path expect-path
-			      (string-append "match_" id ".log"))
-		(lambda ()
-		  (display (string-append "EXPECTING: " pattern))
-		  (newline)
-		  (display "MATCHING AGAINST:")
-		  (newline)
-		  (display stuff)))
-	      (regex:string-match pattern stuff))
-	    #f)))))
+	 (call-with-output-file (utils:path expect-path (string-append "match_" id ".log"))
+	   (lambda (log-port)
+	     ;;This is needed to support matching against output with null characters
+	     (let ((stuff (string-filter printable-char? s)))
+	       (display (string-append "EXPECTING: " pattern) log-port)
+	       (newline log-port)
+	       (display "MATCHING AGAINST:" log-port)
+	       (newline log-port)
+	       (display stuff log-port)
+	       (newline log-port)
+	       (cond
+		((regex:string-match pattern stuff)
+		 (display "MATCHED!!!" log-port)
+		 #t)
+		(else
+		 (display "WAITING..." log-port)
+		 #f)))))
+	 #f)))))
 
 (define (call-init-zpool spec port)
   (let ((args (assoc-ref spec "zpool")))
