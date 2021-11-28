@@ -382,7 +382,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
 	 (live-username (utils:assoc-get spec "guest" "username"))
 	 (live-password (utils:assoc-get spec "guest" "password")))
-    ;;START
+    ;; START RUN
+    (when (not verify-run)
     (when (and (not use-network?) (not (utils:directory? mirror-path)))
       (error "Not using network, yet local mirror directory doesn't exist!.
 Either run with networking enabled, or synchronise apt-mirror first!"))
@@ -561,7 +562,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	  (close-port log-port)
 	  (newline)
 	  (display "Terminated QEMU process!")
-	  (newline))))))
+	  (newline)))))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
