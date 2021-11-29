@@ -680,7 +680,7 @@ Valid options are:
        (utils:path
 	temp-path
 	(or verify-run
-	 (strftime "%F_%H%M%S"
+	 (strftime "%Y%m%d_%H%M%S"
 	  (localtime start-time))))
        #:use-network? use-network?
        #:sync-mirror? sync-mirror?
