@@ -383,6 +383,18 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
 	 (live-username (utils:assoc-get spec "guest" "username"))
 	 (live-password (utils:assoc-get spec "guest" "password")))
+    (when (not (utils:directory? logs-path))
+      (utils:mkdir-p logs-path))
+    (let* ((log-port
+	    (open-output-file
+	     (utils:path logs-path "output.log")))
+	   (expect-char-proc
+	    (lambda (c)
+	      (display c log-port)
+	      (display c))))
+    (dynamic-wind
+      (const #t)
+      (lambda ()
     ;; START RUN
     (when (not verify-run)
     (when (and (not use-network?) (not (utils:directory? mirror-path)))
@@ -390,8 +402,6 @@ Quiting interactive mode is done by typing the `quit' command."
 Either run with networking enabled, or synchronise apt-mirror first!"))
     (when (not (utils:directory? drives-path))
       (utils:mkdir-p drives-path))
-    (when (not (utils:directory? logs-path))
-      (utils:mkdir-p logs-path))
     (when (and sync-mirror? (not (utils:directory? mirror-path)))
       (utils:mkdir-p mirror-path))
     (for-each
@@ -402,14 +412,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (when (not (file-exists? path))
 	   (system* "qemu-img" "create" "-f" "qcow2" path size))))
      drive-specs)
-    (let* ((log-port
-	    (open-output-file
-	     (utils:path logs-path "run.log")))
-	   (expect-char-proc
-	    (lambda (c)
-	      (display c log-port)
-	      (display c)))
-	   (expect-port
+    (let* ((expect-port
 	    (run-qemu
 	     #:name name
 	     #:memory "4096"
@@ -560,7 +563,6 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	      (sleep 5))))))
 	(lambda ()
 	  (popen:close-pipe expect-port)
-	  (close-port log-port)
 	  (newline)
 	  (display "Terminated QEMU process!")
 	  (newline)))))
@@ -569,10 +571,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (newline)
       (format #t "Verifying results for ~A" name)
       (newline)
-      (let* ((expect-char-proc
-	      (lambda (c)
-		(display c)))
-	     (expect-port
+      (let* ((expect-port
 	      (run-qemu
 	       #:name (string-append name "_verify")
 	       #:memory "4096"
@@ -642,7 +641,9 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	    (popen:close-pipe expect-port)
 	    (newline)
 	    (format #t "Finished verification for ~A!\n" name)
-	    (newline)))))))
+	    (newline))))))
+      (lambda ()
+	(close-port log-port))))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
