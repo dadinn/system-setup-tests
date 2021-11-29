@@ -557,7 +557,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	      (call-debian-setup spec expect-port use-network?)))
 	    (expect
 	     ((matcher "test9" "Shutting down the system...")
-	      (sleep 10))))))
+	      (sleep 5))))))
 	(lambda ()
 	  (popen:close-pipe expect-port)
 	  (close-port log-port)
