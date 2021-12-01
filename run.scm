@@ -137,13 +137,6 @@ Quiting interactive mode is done by typing the `quit' command."
      (value #t)
      (value-arg "TEXT")
      (default "debian-bullseye-luks"))
-    (cdrom
-     (description
-      "Path to Live ISO file")
-     (value #t)
-     (value-arg "PATH")
-     (predicate ,(lambda (path) (file-exists? path)))
-     (default "/home/dadinn/Downloads/isos/debian-live-11.1.0-amd64-standard.iso"))
     (sync-mirror
      (single-char #\M)
      (description "Synchronise local apt-mirror via internet, and then exit."))
