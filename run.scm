@@ -507,28 +507,28 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	      (newline))))
 	   (else
 	    (when (and (not use-network?))
-	      (expect
-	       ((matcher "mirror8" "# ")
-		(display "mkdir -p /var/spool/apt-mirror" expect-port)
-		(newline expect-port)))
-	      (expect
-	       ((matcher "mirror9" "# ")
-		(display
-		 (string-join
-		  (list
-		   "mount" "-t" "9p" "-o"
-		   (utils:emit-arg-alist
-		    '(("trans" . "virtio")
-		      ("msize" . "104857600")
-		      "ro"))
-		   "mirrors" "/var/spool/apt-mirror")
-		  " ")
-		 expect-port)
-		(newline expect-port)
-		(expect
-		 ((matcher "mirror10" "# ")
-		  (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
-		  (newline expect-port))))))
+	     (expect
+	      ((matcher "mirror8" "# ")
+	       (display "mkdir -p /var/spool/apt-mirror" expect-port)
+	       (newline expect-port)))
+	     (expect
+	      ((matcher "mirror9" "# ")
+	       (display
+		(string-join
+		 (list
+		  "mount" "-t" "9p" "-o"
+		  (utils:emit-arg-alist
+		   '(("trans" . "virtio")
+		     ("msize" . "104857600")
+		     "ro"))
+		  "mirrors" "/var/spool/apt-mirror")
+		 " ")
+		expect-port)
+	       (newline expect-port)))
+	     (expect
+	      ((matcher "mirror10" "# ")
+	       (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
+	       (newline expect-port))))
 	    (expect
 	     ((matcher "test1" "# ")
 	      (display "apt update" expect-port)
