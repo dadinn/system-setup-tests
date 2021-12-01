@@ -161,9 +161,9 @@ Quiting interactive mode is done by typing the `quit' command."
      (default "/tmp/system-setup"))
     (verify
      (single-char #\V)
-     (description "Run verification process only on existing test results for specific timastamp ID for run.")
+     (description "Run verification process only on existing test results for specific run TIMESTAMP.")
      (value #t)
-     (value-arg "RUNID"))
+     (value-arg "TIMESTAMP"))
     (help
      (single-char #\h)
      (description
@@ -654,24 +654,27 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
-      (display
-       (string-append "USAGE:
+      (format #t "
+Start up Qemu/KVM machine to run test specs based on specified IDs.
 
-" (basename (car args)) " [OPTION...] [ID...]
+USAGE:
 
-Start up KVM/Qemu machine to run test specs based on specified IDs.
+~A [OPTION...] [ID...]
 
-The following tests spec IDs are avaible:
+Valid OPTION value are:
 
-" (string-join (map (lambda (item) (car item)) tests-spec) ",\n") "
+~A
+
+The following test specification ID values are avaible:
+
+~A
 
 When no test spec ID is specified, all tests are run.
 
-Valid options are:
-
-" (utils:usage options-spec)))
-      (newline)
-      (newline))
+"
+       (basename (car args))
+       (utils:usage options-spec)
+       (string-join (map (lambda (item) (car item)) tests-spec) ",\n")))
      (else
       (run-test
        #:name test-name
