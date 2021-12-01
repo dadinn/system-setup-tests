@@ -608,24 +608,29 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	     ((matcher "verify4" "Password: ")
 	      (display password expect-port)
 	      (newline expect-port)))
-	   (when rootdev
-	    (expect
+	   (expect
 	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
-	      (display "lsblk" expect-port)
-	      (newline expect-port))))
+	      (display "sudo lsblk" expect-port)
+	      (newline expect-port)))
+	   (expect
+	     ((matcher "verify6" "\\[sudo\\] password for ~A: " sudouser)
+	      (display password expect-port)
+	      (newline expect-port)))
 	   (when zpool
 	    (expect
-	     (matcher "verify6" )))
+	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
+	      (display "sudo zpool status -P" expect-port)
+	      (newline expect-port)))
 	    (expect
-	     ((matcher "verify6" "~A@~A:~~\\$ " sudouser hostname)
+	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
+	      (display "sudo zfs list -t all" expect-port)
+	      (newline expect-port))))
+	    (expect
+	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
 	      (display "systemctl poweroff" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "verify7" "\\[sudo\\] password for ~A: " sudouser)
-	      (display password expect-port)
-	      (newline expect-port)))
-	    (expect
-	     ((matcher "verify8" "reboot: Power down")
+	     ((matcher "verify12" "reboot: Power down")
 	      (sleep 5))))
 	  (lambda ()
 	    (popen:close-pipe expect-port)
