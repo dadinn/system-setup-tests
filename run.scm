@@ -657,13 +657,20 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (display
        (string-append "USAGE:
 
-" (basename (car args)) " [OPTION...] [COMMAND...]
+" (basename (car args)) " [OPTION...] [ID...]
 
-Start up KVM/Qemu machine to test out shit
+Start up KVM/Qemu machine to run test specs based on specified IDs.
+
+The following tests spec IDs are avaible:
+
+" (string-join (map (lambda (item) (car item)) tests-spec) ",\n") "
+
+When no test spec ID is specified, all tests are run.
 
 Valid options are:
 
 " (utils:usage options-spec)))
+      (newline)
       (newline))
      (else
       (run-test
