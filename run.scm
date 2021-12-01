@@ -143,7 +143,7 @@ Quiting interactive mode is done by typing the `quit' command."
     (use-network
      (single-char #\N)
      (description "Use network for all package dependencies, and disable local apt-mirror."))
-    (data
+    (data-path
      (single-char #\d)
      (description
       "Path to store temporary mirrors, isos, etc.")
@@ -151,7 +151,7 @@ Quiting interactive mode is done by typing the `quit' command."
      (value-arg "path")
      (predicate ,utils:directory?)
      (default "/var/tmp/system-setup"))
-    (temp
+    (temp-path
      (single-char #\t)
      (description
       "Path to store temporary test files, including drives, logs, etc.")
@@ -646,8 +646,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (start-time (current-time))
 	 (test-name (hash-ref options 'name))
 	 (test-spec (assoc-ref tests-spec test-name))
-	 (data-path (hash-ref options 'data))
-	 (temp-path (hash-ref options 'temp))
+	 (data-path (hash-ref options 'data-path))
+	 (temp-path (hash-ref options 'temp-path))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (verify-run (hash-ref options 'verify))
