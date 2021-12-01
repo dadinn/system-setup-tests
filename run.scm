@@ -276,7 +276,7 @@ Quiting interactive mode is done by typing the `quit' command."
 (define (init-matcher log-path)
  (when (not (file-exists? log-path))
   (utils:mkdir-p log-path))
- (lambda (id pattern)
+ (lambda* (id pattern #:rest args)
   (lambda (s eof?)
    (if (not eof?)
     (call-with-output-file (utils:path log-path (string-append id ".log"))
@@ -290,7 +290,7 @@ Quiting interactive mode is done by typing the `quit' command."
        (display stuff log-port)
        (newline log-port)
        (cond
-	((regex:string-match pattern stuff)
+	((regex:string-match (apply format #f pattern args) stuff)
 	 (display "MATCHED!!!" log-port)
 	 #t)
 	(else
