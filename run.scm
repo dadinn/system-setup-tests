@@ -597,22 +597,19 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	    (cond
 	     ((and rootdev bootdev)
 	      (expect
-	       ((matcher "verify2"
-		 (format #f "Please unlock disk ~A:"
-		  (string-append rootdev "1_crypt")))
+	       ((matcher "verify2" "Please unlock disk ~A:"
+		 (string-append rootdev "1_crypt"))
 		(display passphrase expect-port)
 		(newline expect-port))))
 	     (rootdev
 	      (expect
-	       ((matcher "verify2"
-		 (format #f "Please unlock disk ~A:"
-		  (string-append rootdev "3_crypt")))
+	       ((matcher "verify2" "Please unlock disk ~A:"
+		 (string-append rootdev "3_crypt"))
 		(display passphrase expect-port)
 		(newline expect-port))))
 	     (zpool
 	      (expect
-	       ((matcher "verify2"
-		 (format #f "Enter passphrase for '~A':" zpool))
+	       ((matcher "verify2" "Enter passphrase for '~A':" zpool)
 		(display passphrase expect-port)
 		(newline expect-port)))))
 	    (expect
@@ -623,16 +620,20 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	     ((matcher "verify4" "Password: ")
 	      (display password expect-port)
 	      (newline expect-port)))
+	   (when rootdev
 	    (expect
-	     ((matcher "verify5" (format #f "~A@~A:~~\\$ " sudouser hostname))
+	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
 	      (display "lsblk" expect-port)
-	      (newline expect-port)))
+	      (newline expect-port))))
+	   (when zpool
 	    (expect
-	     ((matcher "verify6" (format #f "~A@~A:~~\\$ " sudouser hostname))
+	     (matcher "verify6" )))
+	    (expect
+	     ((matcher "verify6" "~A@~A:~~\\$ " sudouser hostname)
 	      (display "systemctl poweroff" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "verify7" (format #f "\\[sudo\\] password for ~A: " sudouser))
+	     ((matcher "verify7" "\\[sudo\\] password for ~A: " sudouser)
 	      (display password expect-port)
 	      (newline expect-port)))
 	    (expect
