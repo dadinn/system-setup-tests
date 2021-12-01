@@ -273,31 +273,30 @@ Quiting interactive mode is done by typing the `quit' command."
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
 
-(define (init-matcher logs-path)
-  (let ((expect-path (utils:path logs-path "expect")))
-    (when (not (file-exists? expect-path))
-      (utils:mkdir-p expect-path))
-    (lambda (id pattern)
-      (lambda (s eof?)
-	(if (not eof?)
-	 (call-with-output-file (utils:path expect-path (string-append "matcher_" id ".log"))
-	   (lambda (log-port)
-	     ;;This is needed to support matching against output with null characters
-	     (let ((stuff (string-filter printable-char? s)))
-	       (display (string-append "EXPECTING: " pattern) log-port)
-	       (newline log-port)
-	       (display "MATCHING AGAINST:" log-port)
-	       (newline log-port)
-	       (display stuff log-port)
-	       (newline log-port)
-	       (cond
-		((regex:string-match pattern stuff)
-		 (display "MATCHED!!!" log-port)
-		 #t)
-		(else
-		 (display "WAITING..." log-port)
-		 #f)))))
+(define (init-matcher log-path)
+ (when (not (file-exists? log-path))
+  (utils:mkdir-p log-path))
+ (lambda (id pattern)
+  (lambda (s eof?)
+   (if (not eof?)
+    (call-with-output-file (utils:path log-path (string-append id ".log"))
+     (lambda (log-port)
+      ;;This is needed to support matching against output with null characters
+      (let ((stuff (string-filter printable-char? s)))
+       (display (string-append "EXPECTING: " pattern) log-port)
+       (newline log-port)
+       (display "MATCHING AGAINST:" log-port)
+       (newline log-port)
+       (display stuff log-port)
+       (newline log-port)
+       (cond
+	((regex:string-match pattern stuff)
+	 (display "MATCHED!!!" log-port)
+	 #t)
+	(else
+	 (display "WAITING..." log-port)
 	 #f)))))
+    #f))))
 
 (define (call-init-zpool spec port)
   (let ((args (assoc-ref spec "zpool")))
@@ -379,6 +378,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (utils:assoc-get spec "guest" "iso")))
 	 (test-path (utils:path temp-path name))
 	 (logs-path (utils:path test-path "logs"))
+	 (matcher (init-matcher (utils:path logs-path "expect")))
 	 (drives-path (utils:path test-path "drives"))
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
 	 (live-username (utils:assoc-get spec "guest" "username"))
@@ -421,8 +421,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	     #:mirrors-path mirror-path
 	     #:cdrom-path cdrom-path
 	     #:drives-path drives-path
-	     #:drive-specs drive-specs))
-	   (matcher (init-matcher logs-path)))
+	     #:drive-specs drive-specs)))
       (dynamic-wind
 	(const #t)
 	(lambda ()
