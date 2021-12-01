@@ -131,13 +131,7 @@ Quiting interactive mode is done by typing the `quit' command."
     port))
 
 (define options-spec
-  `((name
-     (single-char #\n)
-     (description "Name to identify test execution.")
-     (value #t)
-     (value-arg "TEXT")
-     (default "debian-bullseye-luks"))
-    (sync-mirror
+  `((sync-mirror
      (single-char #\M)
      (description "Synchronise local apt-mirror via internet, and then exit."))
     (use-network
@@ -358,8 +352,9 @@ Quiting interactive mode is done by typing the `quit' command."
 (define os-mirror-type
   '(("debian" . "apt")))
 
-(define* (run-test #:key name spec temp-path data-path sources-path use-network? sync-mirror? verify-run)
-  (let* ((mirror-path
+(define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
+  (let* ((spec (assoc-ref tests-spec name))
+	 (mirror-path
 	  (utils:path
 	   data-path "mirrors"
 	   (assoc-ref
@@ -644,8 +639,6 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
 	 (start-time (current-time))
-	 (test-name (hash-ref options 'name))
-	 (test-spec (assoc-ref tests-spec test-name))
 	 (data-path (hash-ref options 'data-path))
 	 (temp-path (hash-ref options 'temp-path))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
@@ -676,21 +669,24 @@ When no test spec ID is specified, all tests are run.
        (utils:usage options-spec)
        (string-join (map (lambda (item) (car item)) tests-spec) ",\n")))
      (else
-      (run-test
-       #:name test-name
-       #:spec test-spec
-       #:sources-path project-path
-       #:data-path data-path
-       #:temp-path
-       (utils:path
-	temp-path
-	(or verify-run
-	 (strftime "%Y%m%d_%H%M%S"
-	  (localtime start-time))))
-       #:use-network? use-network?
-       #:sync-mirror? sync-mirror?
-       #:verify-run verify-run
-       )))))
+      (for-each
+       (lambda (test-name)
+	(run-test
+	 #:name test-name
+	 #:sources-path project-path
+	 #:data-path data-path
+	 #:temp-path
+	 (utils:path
+	  temp-path
+	  (or verify-run
+	   (strftime "%Y%m%d_%H%M%S"
+	    (localtime start-time))))
+	 #:use-network? use-network?
+	 #:sync-mirror? sync-mirror?
+	 #:verify-run verify-run))
+       (or (hash-ref options '())
+	(map (lambda (item) (car item))
+	 tests-spec)))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
