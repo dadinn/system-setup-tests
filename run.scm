@@ -164,95 +164,85 @@ Quiting interactive mode is done by typing the `quit' command."
       "This usage help..."))))
 
 (define tests-spec
-  '(("debian-buster-luks" .
-     (("guest" .
-       (("os" . "debian")
-	("release" . "buster")
-	("username" . "user")
-	("password" . "live")
-	("iso" .
-	 (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-	  ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
-	("drives" .
-	 ((("name" . "main.img")
-	   ("size" . "4G")
-	   ("if" . "virtio"))))
-	("uefi" . #f)))
-      ("instroot" .
-       (("rootdev" . "/dev/vda")
-	("swapsize" . "100M")
-	("passphrase" . "asonetuh")))
-      ("install" .
-       (("os" . "debian")
-	("hostname" . "besenczy")
-	("sudouser" . "dadinn")
-	("password" . "asonetuh")))))
-    ("debian-bullseye-luks" .
-     (("guest" .
-       (("os" . "debian")
-	("release" . "bullseye")
-	("username" . "user")
-	("password" . "live")
-	("iso" .
-	 (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-	  ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
-	("drives" .
-	 ((("name" . "main.img")
-	   ("size" . "4G")
-	   ("if" . "virtio"))))
-	("uefi" . #f)))
-      ("instroot" .
-       (("rootdev" . "/dev/vda")
-	("swapsize" . "100M")
-	("passphrase" . "asonetuh")))
-      ("install" .
-       (("os" . "debian")
-	("hostname" . "besenczy")
-	("sudouser" . "dadinn")
-	("password" . "asonetuh")))))
-    ("debian-bullseye-zfs" .
-     (("guest" .
-       (("os" . "debian")
-	("release" . "bullseye")
-	("username" . "user")
-	("password" . "live")
-	("iso" .
-	 (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-	  ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
-	("drives" .
-	 ((("name" . "boot.img")
-	   ("size" . "1G")
-	   ("if" . "virtio"))
-	  (("name" . "zfs1.img")
-	   ("size" . "3G")
-	   ("if" . "virtio"))
-	  (("name" . "zfs2.img")
-	   ("size" . "3G")
-	   ("if" . "virtio"))))
-	("uefi" . #f)))
-      ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
-      ("instroot" .
-       (("zpool" . "storage")
-	("bootdev" . "/dev/vda")
-	("swapsize" . "100M")
-	("passphrase" . "asonetuh")))
-      ("install" .
-       (("os" . "debian")
-	("hostname" . "besenczy")
-	("sudouser" . "dadinn")
-	("password" . "asonetuh")))))
-    ("debian-bullseye-luks" .
-     (("guest" .
-       (("os" . "debian")
-	("release" . "bullseye")
-	("iso" .
-	 (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-	  ("filename" . "debian-live-11.1.0-amd64-standard.iso")))))))
-    ("archlinux-luks" .
-     (("os" . "archlinux")
-      ("iso" .
-       (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
-	("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
+ '(("debian-buster-luks"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "buster")
+     ("username" . "user")
+     ("password" . "live")
+     ("iso" .
+      (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+       ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
+     ("drives" .
+      ((("name" . "main.img")
+	("size" . "4G")
+	("if" . "virtio")))))
+    ("instroot"
+     ("rootdev" . "/dev/vda")
+     ("swapsize" . "100M")
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("debian-bullseye-luks"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "bullseye")
+     ("username" . "user")
+     ("password" . "live")
+     ("iso" .
+      (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+       ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
+     ("drives" .
+      ((("name" . "main.img")
+	("size" . "4G")
+	("if" . "virtio")))))
+    ("instroot" .
+     (("rootdev" . "/dev/vda")
+      ("swapsize" . "100M")
+      ("passphrase" . "asonetuh")))
+    ("install" .
+     (("os" . "debian")
+      ("hostname" . "besenczy")
+      ("sudouser" . "dadinn")
+      ("password" . "asonetuh"))))
+   ("debian-bullseye-zfs"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "bullseye")
+     ("username" . "user")
+     ("password" . "live")
+     ("iso"
+      ("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+      ("filename" . "debian-live-11.1.0-amd64-standard.iso"))
+     ("drives"
+      (("name" . "boot.img")
+       ("size" . "1G")
+       ("if" . "virtio"))
+      (("name" . "zfs1.img")
+       ("size" . "3G")
+       ("if" . "virtio"))
+      (("name" . "zfs2.img")
+       ("size" . "3G")
+       ("if" . "virtio"))))
+    ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
+    ("instroot"
+     ("zpool" . "storage")
+     ("bootdev" . "/dev/vda")
+     ("swapsize" . "100M")
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("archlinux-luks" .
+    (("os" . "archlinux")
+     ("iso" .
+      (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
+       ("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
 
 (define (resolve-iso-path data-path spec)
   (let ((iso-path (utils:path data-path "isos" (assoc-ref spec "filename"))))
