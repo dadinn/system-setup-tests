@@ -527,7 +527,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		(newline expect-port)
 		(expect
 		 ((matcher "mirror10" "# ")
-		  (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main contrib;g' /etc/apt/sources.list" expect-port)
+		  (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
 		  (newline expect-port))))))
 	    (expect
 	     ((matcher "test1" "# ")
