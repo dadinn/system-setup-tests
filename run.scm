@@ -163,6 +163,26 @@ Quiting interactive mode is done by typing the `quit' command."
      (description
       "This usage help..."))))
 
+(define live-isos-spec
+ '(("debian"
+    ("bullseye"
+     ("iso"
+      ("filename" . "debian-live-11.1.0-amd64-standard.iso")
+      ("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce"))
+     ("username" . "user")
+     ("password" . "live"))
+    ("buster"
+     ("iso"
+      ("filename" . "debian-live-10.10.0-amd64-standard.iso")
+      ("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce"))
+     ("username" . "user")
+     ("password" . "live")))
+   ("archlinux"
+    ("2020.01.01"
+     ("iso"
+      ("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
+      ("filename" ."archlinux-2020.01.01-x86_64.iso"))))))
+
 (define tests-spec
  '(("debian-buster-luks"
     ("guest"
