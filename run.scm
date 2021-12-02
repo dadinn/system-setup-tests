@@ -661,6 +661,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (verify-run (hash-ref options 'verify))
+	 (test-names (hash-ref options '()))
 	 (help? (hash-ref options 'help)))
     (cond
      (help?
@@ -708,11 +709,12 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	 #:use-network? use-network?
 	 #:sync-mirror? sync-mirror?
 	 #:verify-run verify-run))
-       (or (hash-ref options '())
+       (if (null? test-names)
 	(map (lambda (item) (car item))
 	 (filter
 	  (lambda (item) (assoc-ref item "enabled"))
-	  test-specs))))))))
+	  test-specs))
+	test-names))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
