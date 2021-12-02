@@ -367,7 +367,9 @@ Quiting interactive mode is done by typing the `quit' command."
 (define (open-log-port logs-path filename)
  (when (not (utils:directory? logs-path))
   (utils:mkdir-p logs-path))
- (open-output-file (utils:path logs-path filename)))
+ (let ((log-port (open-output-file (utils:path logs-path filename))))
+  (setvbuf log-port 'none)
+  log-port))
 
 (define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
   (let* ((spec (assoc-ref test-specs name))
