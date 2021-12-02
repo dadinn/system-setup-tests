@@ -207,6 +207,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("sudouser" . "dadinn")
      ("password" . "asonetuh")))
    ("debian-bullseye-luks"
+    ("enabled" . #t)
     ("guest"
      ("os" . "debian")
      ("release" . "bullseye")
@@ -229,6 +230,7 @@ Quiting interactive mode is done by typing the `quit' command."
       ("sudouser" . "dadinn")
       ("password" . "asonetuh"))))
    ("debian-bullseye-zfs"
+    ("enabled" . #t)
     ("guest"
      ("os" . "debian")
      ("release" . "bullseye")
@@ -701,7 +703,9 @@ When no test spec ID is specified, all tests are run.
 	 #:verify-run verify-run))
        (or (hash-ref options '())
 	(map (lambda (item) (car item))
-	 tests-spec)))))))
+	 (filter
+	  (lambda (item) (assoc-ref item "enabled"))
+	  tests-spec))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
