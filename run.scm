@@ -391,7 +391,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (expect-char-proc
 	    (lambda (c)
 	      (display c log-port)
-	      (display c))))
+	     (display c))))
+     (setvbuf log-port 'none)
     (dynamic-wind
       (const #t)
       (lambda ()
