@@ -713,9 +713,9 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	  #:sync-mirror? sync-mirror?
 	  #:verify-run verify-run)))
        (if (null? test-names)
-	(map (lambda (item) (car item))
+	(map (lambda (spec) (car spec))
 	 (filter
-	  (lambda (item) (assoc-ref item "enabled"))
+	  (lambda (spec) (assoc-ref spec "enabled"))
 	  test-specs))
 	(map
 	 (lambda (name)
