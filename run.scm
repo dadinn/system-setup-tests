@@ -679,12 +679,19 @@ The following test specification ID values are avaible:
 
 ~A
 
-When no test spec ID is specified, all tests are run.
+When no test spec ID is specified, only the enabled tests (ones marked with *) are run.
 
 "
        (basename (car args))
        (utils:usage options-spec)
-       (string-join (map (lambda (item) (car item)) test-specs) ",\n")))
+       (string-join
+	(map
+	 (lambda (spec)
+	   (if (assoc-ref spec "enabled")
+	    (string-append (car spec) "*")
+	    (car spec)))
+	 test-specs)
+	",\n")))
      (else
       (for-each
        (lambda (test-name)
