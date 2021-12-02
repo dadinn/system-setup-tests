@@ -364,6 +364,11 @@ Quiting interactive mode is done by typing the `quit' command."
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
 
+(define (open-log-port logs-path filename)
+ (when (not (utils:directory? logs-path))
+  (utils:mkdir-p logs-path))
+ (open-output-file (utils:path logs-path filename)))
+
 (define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
   (let* ((spec (assoc-ref test-specs name))
 	 (mirror-path
@@ -378,21 +383,16 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (utils:assoc-get spec "guest" "iso")))
 	 (test-path (utils:path temp-path name))
 	 (logs-path (utils:path test-path "logs"))
+	 (log-port (open-log-port logs-path "output.log"))
+	 (expect-char-proc
+	  (lambda (c)
+	    (display c log-port)
+	    (display c)))
 	 (matcher (init-matcher (utils:path logs-path "expect")))
 	 (drives-path (utils:path test-path "drives"))
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
 	 (live-username (utils:assoc-get spec "guest" "username"))
 	 (live-password (utils:assoc-get spec "guest" "password")))
-    (when (not (utils:directory? logs-path))
-      (utils:mkdir-p logs-path))
-    (let* ((log-port
-	    (open-output-file
-	     (utils:path logs-path "output.log")))
-	   (expect-char-proc
-	    (lambda (c)
-	      (display c log-port)
-	     (display c))))
-     (setvbuf log-port 'none)
     (dynamic-wind
       (const #t)
       (lambda ()
@@ -651,7 +651,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	    (format #t "Finished verification for ~A!\n" name)
 	    (newline))))))
       (lambda ()
-	(close-port log-port))))))
+	(close-port log-port)))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
