@@ -696,25 +696,32 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
      (else
       (for-each
        (lambda (test-name)
-	(run-test
-	 #:name test-name
-	 #:sources-path project-path
-	 #:data-path data-path
-	 #:temp-path
-	 (utils:path
-	  temp-path
-	  (or verify-run
-	   (strftime "%Y%m%d_%H%M%S"
-	    (localtime start-time))))
-	 #:use-network? use-network?
-	 #:sync-mirror? sync-mirror?
-	 #:verify-run verify-run))
+	(if (not (assoc-ref test-specs test-name))
+	 (error "No spec exists for test name!" test-name)
+	 (run-test
+	  #:name test-name
+	  #:sources-path project-path
+	  #:data-path data-path
+	  #:temp-path
+	  (utils:path
+	   temp-path
+	   (or verify-run
+	    (strftime "%Y%m%d_%H%M%S"
+	     (localtime start-time))))
+	  #:use-network? use-network?
+	  #:sync-mirror? sync-mirror?
+	  #:verify-run verify-run)))
        (if (null? test-names)
 	(map (lambda (item) (car item))
 	 (filter
 	  (lambda (item) (assoc-ref item "enabled"))
 	  test-specs))
-	test-names))))))
+	(map
+	 (lambda (name)
+	  (if (not (assoc-ref test-specs name))
+	   (error "No spec exists for test name!" name)
+	   name))
+	 test-names)))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
