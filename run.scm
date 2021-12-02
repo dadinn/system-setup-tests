@@ -183,7 +183,7 @@ Quiting interactive mode is done by typing the `quit' command."
       ("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
       ("filename" ."archlinux-2020.01.01-x86_64.iso"))))))
 
-(define tests-spec
+(define test-specs
  '(("debian-buster-luks"
     ("guest"
      ("os" . "debian")
@@ -365,7 +365,7 @@ Quiting interactive mode is done by typing the `quit' command."
   '(("debian" . "apt")))
 
 (define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
-  (let* ((spec (assoc-ref tests-spec name))
+  (let* ((spec (assoc-ref test-specs name))
 	 (mirror-path
 	  (utils:path
 	   data-path "mirrors"
@@ -684,7 +684,7 @@ When no test spec ID is specified, all tests are run.
 "
        (basename (car args))
        (utils:usage options-spec)
-       (string-join (map (lambda (item) (car item)) tests-spec) ",\n")))
+       (string-join (map (lambda (item) (car item)) test-specs) ",\n")))
      (else
       (for-each
        (lambda (test-name)
@@ -705,7 +705,7 @@ When no test spec ID is specified, all tests are run.
 	(map (lambda (item) (car item))
 	 (filter
 	  (lambda (item) (assoc-ref item "enabled"))
-	  tests-spec))))))))
+	  test-specs))))))))
 
 
 ;; Matenak mukodott Archlinux-szal:
