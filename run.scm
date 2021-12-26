@@ -91,7 +91,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		  (utils:emit-arg-alist
 		   `(("file" . ,(utils:path drives-path (assoc-ref spec "name")))
 		     ("format" . "qcow2")
-		     ("if" . ,(assoc-ref spec "if"))
+		     ("if" . ,(assoc-ref spec "interface"))
 		     ("media" . "disk")))))
 	       drive-specs)
 	    ,@(if uefi?
@@ -199,7 +199,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("drives" .
       ((("name" . "main.img")
 	("size" . "4G")
-	("if" . "virtio")))))
+	("interface" . "virtio")))))
     ("instroot" .
      (("rootdev" . "/dev/vda")
       ("swapsize" . "100M")
@@ -222,13 +222,13 @@ Quiting interactive mode is done by typing the `quit' command."
      ("drives"
       (("name" . "boot.img")
        ("size" . "1G")
-       ("if" . "virtio"))
+       ("interface" . "virtio"))
       (("name" . "zfs1.img")
        ("size" . "3G")
-       ("if" . "virtio"))
+       ("interface" . "virtio"))
       (("name" . "zfs2.img")
        ("size" . "3G")
-       ("if" . "virtio"))))
+       ("interface" . "virtio"))))
     ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
     ("instroot"
      ("zpool" . "storage")
