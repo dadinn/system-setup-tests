@@ -91,8 +91,13 @@ Quiting interactive mode is done by typing the `quit' command."
 		  (utils:emit-arg-alist
 		   `(("file" . ,(utils:path drives-path (string-append (assoc-ref spec "name") ".img")))
 		     ("format" . "qcow2")
-		     ("if" . ,(assoc-ref spec "interface"))
-		     ("media" . "disk")))))
+		     ("if" . "none")
+		     ("id" . ,(assoc-ref spec "name"))))
+		  "-device"
+		  (utils:emit-arg-alist
+		   `("virtio-blk-pci"
+		     ("drive" . ,(assoc-ref spec "name"))
+		     ("serial" . ,(assoc-ref spec "name"))))))
 	       drive-specs)
 	    ,@(if uefi?
 	       (list
