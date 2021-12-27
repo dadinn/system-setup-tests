@@ -89,7 +89,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		 (list
 		  "-drive"
 		  (utils:emit-arg-alist
-		   `(("file" . ,(utils:path drives-path (assoc-ref spec "name")))
+		   `(("file" . ,(utils:path drives-path (string-append (assoc-ref spec "name") ".img")))
 		     ("format" . "qcow2")
 		     ("if" . ,(assoc-ref spec "interface"))
 		     ("media" . "disk")))))
@@ -174,7 +174,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
        ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
      ("drives" .
-      ((("name" . "main.img")
+      ((("name" . "main")
 	("size" . "4G")
 	("if" . "virtio")))))
     ("instroot"
@@ -197,7 +197,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
        ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
      ("drives" .
-      ((("name" . "main.img")
+      ((("name" . "main")
 	("size" . "4G")
 	("interface" . "virtio")))))
     ("instroot" .
@@ -220,13 +220,13 @@ Quiting interactive mode is done by typing the `quit' command."
       ("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
       ("filename" . "debian-live-11.1.0-amd64-standard.iso"))
      ("drives"
-      (("name" . "boot.img")
+      (("name" . "boot")
        ("size" . "1G")
        ("interface" . "virtio"))
-      (("name" . "zfs1.img")
+      (("name" . "zfs1")
        ("size" . "3G")
        ("interface" . "virtio"))
-      (("name" . "zfs2.img")
+      (("name" . "zfs2")
        ("size" . "3G")
        ("interface" . "virtio"))))
     ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
@@ -410,6 +410,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
     (for-each
      (lambda (spec)
        (let* ((filename (assoc-ref spec "name"))
+	      (filename (string-append filename ".img"))
 	      (path (utils:path drives-path filename))
 	      (size (assoc-ref spec "size")))
 	 (when (not (file-exists? path))
