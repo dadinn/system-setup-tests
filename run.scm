@@ -604,16 +604,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	     ((matcher "verify1" "The highlighted entry will be executed automatically in [0-9]+s.")
 	      (newline expect-port)))
 	    (cond
-	     ((and rootdev bootdev)
-	      (expect
-	       ((matcher "verify2" "Please unlock disk ~A:"
-		 (string-append rootdev "1_crypt"))
-		(display passphrase expect-port)
-		(newline expect-port))))
 	     (rootdev
 	      (expect
 	       ((matcher "verify2" "Please unlock disk ~A:"
-		 (string-append rootdev "3_crypt"))
+		 (string-append rootdev (if bootdev "1" "3") "_crypt"))
 		(display passphrase expect-port)
 		(newline expect-port))))
 	     (zpool
