@@ -405,13 +405,15 @@ Quiting interactive mode is done by typing the `quit' command."
       (lambda ()
     ;; START RUN
     (when (not verify-run)
-    (when (and (not use-network?) (not (utils:directory? mirror-path)))
-      (error "Not using network, yet local mirror directory doesn't exist!.
-Either run with networking enabled, or synchronise apt-mirror first!"))
+      (when (not (utils:directory? mirror-path))
+	(cond
+	 (sync-mirror?
+	  (utils:mkdir-p mirror-path))
+	 ((not use-network?)
+	  (error "Not using network, yet local mirror directory doesn't exist!.
+Either run with networking enabled, or synchronise apt-mirror first!"))))
     (when (not (utils:directory? drives-path))
       (utils:mkdir-p drives-path))
-    (when (and sync-mirror? (not (utils:directory? mirror-path)))
-      (utils:mkdir-p mirror-path))
     (for-each
      (lambda (spec)
        (let* ((filename (assoc-ref spec "name"))
