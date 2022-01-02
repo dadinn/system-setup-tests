@@ -552,38 +552,38 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	       (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
 	       (newline expect-port))))
 	    (expect
-	     ((matcher "test1" "# ")
+	     ((matcher "mirror11" "# ")
 	      (display "apt update" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "test2" "# ")
+	     ((matcher "test1" "# ")
 	      (display "apt install -y guile-3.0" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "test3" "# ")
+	     ((matcher "test2" "# ")
 	      (call-init-zpool spec expect-port)))
 	    (expect
-	     ((matcher "test4" "# ")
+	     ((matcher "test3" "# ")
 	      (call-init-instroot spec expect-port)))
 	    (when (not use-network?)
 	      (expect
-	       ((matcher "test5" "# ")
+	       ((matcher "test4" "# ")
 		(display "apt install -y nginx" expect-port)
 		(newline expect-port)))
 	      (expect
-	       ((matcher "test6"  "# ")
+	       ((matcher "test5"  "# ")
 		(display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
 		(newline expect-port)))
 	      (expect
-	       ((matcher "test7" "# ")
+	       ((matcher "test6" "# ")
 		(display "systemctl restart nginx" expect-port)
 		(newline expect-port)
 		(sleep 10))))
 	    (expect
-	     ((matcher "test8" "# ")
+	     ((matcher "test7" "# ")
 	      (call-debian-setup spec expect-port use-network?)))
 	    (expect
-	     ((matcher "test9" "Shutting down the system...")
+	     ((matcher "test8" "Shutting down the system...")
 	      (sleep 5))))))
 	(lambda ()
 	  (popen:close-pipe expect-port)
