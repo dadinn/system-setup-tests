@@ -637,25 +637,33 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     ((matcher "verify4" "Password: ")
 	      (display password expect-port)
 	      (newline expect-port)))
-	   (expect
+	    (expect
 	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
-	      (display "sudo lsblk" expect-port)
+	      (display "sudo -i" expect-port)
 	      (newline expect-port)))
-	   (expect
+	    (expect
 	     ((matcher "verify6" "\\[sudo\\] password for ~A: " sudouser)
 	      (display password expect-port)
 	      (newline expect-port)))
-	   (when zpool
 	    (expect
-	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
-	      (display "sudo zpool status -P" expect-port)
+	     ((matcher "verify7" "root@~A:~~# " hostname)
+	      (display "export LC_ALL=C" expect-port)
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
-	      (display "sudo zfs list -t all" expect-port)
-	      (newline expect-port))))
+	     ((matcher "verify8" "root@~A:~~# " hostname)
+	      (display "lsblk" expect-port)
+	      (newline expect-port)))
+	    (when zpool
+	      (expect
+	       ((matcher "verify9" "root@~A:~~# " hostname)
+		(display "zpool status -P" expect-port)
+		(newline expect-port)))
+	      (expect
+	       ((matcher "verify10" "root@~A:~~# " hostname)
+		(display "zfs list -t all" expect-port)
+		(newline expect-port))))
 	    (expect
-	     ((matcher "verify5" "~A@~A:~~\\$ " sudouser hostname)
+	     ((matcher "verify11" "root@~A:~~# " hostname)
 	      (display "systemctl poweroff" expect-port)
 	      (newline expect-port)))
 	    (expect
