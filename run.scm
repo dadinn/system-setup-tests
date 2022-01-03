@@ -352,6 +352,11 @@ Quiting interactive mode is done by typing the `quit' command."
     "-m http://localhost:8080/debian"
     "")))
 
+(define debian-guile-versions
+  '(("bullseye" . "guile-3.0")
+    ("buster" . "guile-2.2")
+    ("stretch" . "guile-2.0")))
+
 (define os-mirror-type
   '(("debian" . "apt")))
 
@@ -557,7 +562,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "test01" "# ")
-	      (display "apt install -y guile-3.0" expect-port)
+	      (format
+	       expect-port "apt install -y ~A"
+	       (assoc-ref debian-guile-versions
+		(utils:assoc-get spec "guest" "release")))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "test02" "# ")
