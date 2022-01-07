@@ -203,6 +203,37 @@ Quiting interactive mode is done by typing the `quit' command."
      ("hostname" . "besenczy")
      ("sudouser" . "dadinn")
      ("password" . "asonetuh")))
+   ("debian-buster-zfs"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "buster")
+     ("username" . "user")
+     ("password" . "live")
+     ("iso" .
+      (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+       ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
+     ("drives"
+      (("name" . "boot")
+       ("size" . "1G")
+       ("interface" . "virtio"))
+      (("name" . "zfs1")
+       ("size" . "3G")
+       ("interface" . "virtio"))
+      (("name" . "zfs2")
+       ("size" . "3G")
+       ("interface" . "virtio"))))
+    ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
+    ("instroot"
+     ("zpool" . "storage")
+     ("bootdev" . "/dev/vda")
+     ("swapsize" . "100M")
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("release" . "buster")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
    ("debian-bullseye-luks"
     ("enabled" . #t)
     ("guest"
