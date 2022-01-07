@@ -199,6 +199,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("passphrase" . "asonetuh"))
     ("install"
      ("os" . "debian")
+     ("release" . "buster")
      ("hostname" . "besenczy")
      ("sudouser" . "dadinn")
      ("password" . "asonetuh")))
@@ -222,6 +223,7 @@ Quiting interactive mode is done by typing the `quit' command."
       ("passphrase" . "asonetuh")))
     ("install" .
      (("os" . "debian")
+      ("release" . "bullseye")
       ("hostname" . "besenczy")
       ("sudouser" . "dadinn")
       ("password" . "asonetuh"))))
@@ -253,6 +255,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("passphrase" . "asonetuh"))
     ("install"
      ("os" . "debian")
+     ("release" . "bullseye")
      ("hostname" . "besenczy")
      ("sudouser" . "dadinn")
      ("password" . "asonetuh")))
@@ -346,6 +349,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (string-append " -u " val))
 	  ((eq? "password" key)
 	   (string-append " -p " val))
+	  ((eq? "release" key)
+	   (string-append " -r " val))
 	  (else "")))))
     "" (assoc-ref spec "install"))
    (if (not use-network?)
