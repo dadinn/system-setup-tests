@@ -205,6 +205,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("password" . "asonetuh")))
    ("debian-buster-zfs"
     ("guest"
+     ("network" . #t)
      ("os" . "debian")
      ("release" . "buster")
      ("username" . "user")
@@ -431,6 +432,7 @@ Quiting interactive mode is done by typing the `quit' command."
 
 (define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
   (let* ((spec (assoc-ref test-specs name))
+	 (use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
 	 (mirror-path
 	  (utils:path
 	   data-path "mirrors"
