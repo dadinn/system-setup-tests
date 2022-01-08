@@ -223,7 +223,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (("name" . "zfs2")
        ("size" . "3G")
        ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
+    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
     ("instroot"
      ("zpool" . "storage")
      ("bootdev" . "/dev/vda")
@@ -279,7 +279,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (("name" . "zfs2")
        ("size" . "3G")
        ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/vdb" "/dev/vdc")
+    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
     ("instroot"
      ("zpool" . "storage")
      ("bootdev" . "/dev/vda")
