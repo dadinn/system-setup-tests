@@ -194,7 +194,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	("size" . "4G")
 	("if" . "virtio")))))
     ("instroot"
-     ("rootdev" . "/dev/vda")
+     ("rootdev" . "/dev/disk/by-id/virtio-main")
      ("swapsize" . "100M")
      ("passphrase" . "asonetuh"))
     ("install"
@@ -226,7 +226,7 @@ Quiting interactive mode is done by typing the `quit' command."
     ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
     ("instroot"
      ("zpool" . "storage")
-     ("bootdev" . "/dev/vda")
+     ("bootdev" . "/dev/disk/by-id/virtio-boot")
      ("swapsize" . "100M")
      ("passphrase" . "asonetuh"))
     ("install"
@@ -250,7 +250,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	("size" . "4G")
 	("interface" . "virtio")))))
     ("instroot" .
-     (("rootdev" . "/dev/vda")
+     (("rootdev" . "/dev/disk/by-id/virtio-main")
       ("swapsize" . "100M")
       ("passphrase" . "asonetuh")))
     ("install" .
@@ -282,7 +282,7 @@ Quiting interactive mode is done by typing the `quit' command."
     ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
     ("instroot"
      ("zpool" . "storage")
-     ("bootdev" . "/dev/vda")
+     ("bootdev" . "/dev/disk/by-id/virtio-boot")
      ("swapsize" . "100M")
      ("passphrase" . "asonetuh"))
     ("install"
