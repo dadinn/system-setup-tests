@@ -180,7 +180,89 @@ Quiting interactive mode is done by typing the `quit' command."
       "This usage help..."))))
 
 (define test-specs
- '(("debian-buster-luks"
+ '(("debian-stretch-luks"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("username" . "user")
+     ("password" . "live")
+     ("drives"
+      (("name" . "luks")
+       ("size" . "4G")
+       ("interface" . "virtio"))))
+    ("instroot"
+     ("rootdev" . "/dev/disk/by-id/virtio-luks")
+     ("luks-label" . "crypt_root")
+     ("swapsize" . "100M")
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("debian-stretch-luks-zfs"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("username" . "user")
+     ("password" . "live")
+     ("drives"
+      (("name" . "luks")
+       ("size" . "4G")
+       ("interface" . "virtio"))
+      (("name" . "zfs1")
+       ("size" . "1G")
+       ("interface" . "virtio"))
+      (("name" . "zfs2")
+       ("size" . "1G")
+       ("interface" . "virtio"))))
+    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
+    ("instroot"
+     ("rootdev" . "/dev/disk/by-id/virtio-luks")
+     ("luks-label" . "crypt_root")
+     ("zpool" . "storage")
+     ("swapsize" . "100M")
+     ;; passphrase must be set for unattended mode even
+     ;; though ZFS v0.6.5 does not support native encryption
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("debian-stretch-zfs"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("username" . "user")
+     ("password" . "live")
+     ("drives"
+      (("name" . "boot")
+       ("size" . "1G")
+       ("interface" . "virtio"))
+      (("name" . "zfs1")
+       ("size" . "2G")
+       ("interface" . "virtio"))
+      (("name" . "zfs2")
+       ("size" . "2G")
+       ("interface" . "virtio"))))
+    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
+    ("instroot"
+     ("bootdev" . "/dev/disk/by-id/virtio-boot")
+     ("zpool" . "storage")
+     ("swapsize" . "100M")
+     ;; passphrase must be set for unattended mode even
+     ;; though ZFS v0.6.5 does not support native encryption
+     ("passphrase" . #f))
+    ("install"
+     ("os" . "debian")
+     ("release" . "stretch")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("debian-buster-luks"
     ("guest"
      ("os" . "debian")
      ("release" . "buster")
@@ -273,6 +355,35 @@ Quiting interactive mode is done by typing the `quit' command."
     ("instroot"
      ("zpool" . "storage")
      ("bootdev" . "/dev/disk/by-id/virtio-boot")
+     ("swapsize" . "100M")
+     ("passphrase" . "asonetuh"))
+    ("install"
+     ("os" . "debian")
+     ("release" . "bullseye")
+     ("hostname" . "besenczy")
+     ("sudouser" . "dadinn")
+     ("password" . "asonetuh")))
+   ("debian-bullseye-luks-zfs"
+    ("guest"
+     ("os" . "debian")
+     ("release" . "bullseye")
+     ("username" . "user")
+     ("password" . "live")
+     ("drives"
+      (("name" . "main")
+       ("size" . "3G")
+       ("interface" . "virtio"))
+      (("name" . "zfs1")
+       ("size" . "3G")
+       ("interface" . "virtio"))
+      (("name" . "zfs2")
+       ("size" . "3G")
+       ("interface" . "virtio"))))
+    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
+    ("instroot"
+     ("rootdev" . "/dev/disk/by-id/virtio-main")
+     ("luks-label" . "vda3_crypt")
+     ("zpool" . "storage")
      ("swapsize" . "100M")
      ("passphrase" . "asonetuh"))
     ("install"
