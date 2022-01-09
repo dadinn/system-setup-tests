@@ -596,10 +596,14 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	       (newline expect-port)))
 	     (expect
 	      ((matcher "mirror10" "# ")
+	       (display "if [ -e /etc/apt/sources.list.d/base.list ]; then echo updating /etc/apt/sources.list; mv /etc/apt/sources.list.d/base.list /etc/apt/sources.list; fi" expect-port)
+	       (newline expect-port)))
+	     (expect
+	      ((matcher "mirror11" "# ")
 	       (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
 	       (newline expect-port))))
 	    (expect
-	     ((matcher "mirror11" "# ")
+	     ((matcher "mirror12" "# ")
 	      (display "apt update" expect-port)
 	      (newline expect-port)))
 	    (expect
