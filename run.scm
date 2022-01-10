@@ -435,6 +435,8 @@ Quiting interactive mode is done by typing the `quit' command."
   log-port))
 
 (define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
+  (when (not (assoc-ref test-specs name))
+    (error "No spec exists for test name!" name))
   (let* ((spec (assoc-ref test-specs name))
 	 (use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
 	 (mirror-path
@@ -776,21 +778,19 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
      (else
       (for-each
        (lambda (test-name)
-	(if (not (assoc-ref test-specs test-name))
-	 (error "No spec exists for test name!" test-name)
-	 (run-test
-	  #:name test-name
-	  #:sources-path project-path
-	  #:data-path data-path
-	  #:temp-path
-	  (utils:path
-	   temp-path
-	   (or verify-run
-	    (strftime "%Y%m%d_%H%M%S"
-	     (localtime start-time))))
-	  #:use-network? use-network?
-	  #:sync-mirror? sync-mirror?
-	  #:verify-run verify-run)))
+	(run-test
+	 #:name test-name
+	 #:sources-path project-path
+	 #:data-path data-path
+	 #:temp-path
+	 (utils:path
+	  temp-path
+	  (or verify-run
+	   (strftime "%Y%m%d_%H%M%S"
+	    (localtime start-time))))
+	 #:use-network? use-network?
+	 #:sync-mirror? sync-mirror?
+	 #:verify-run verify-run))
        (if (null? test-names)
 	(map (lambda (spec) (car spec))
 	 (filter
