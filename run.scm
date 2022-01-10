@@ -346,6 +346,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (string-append " -p " val))
 	  ((eq? "rootdev" key)
 	   (string-append " -r " val))
+	  ((eq? "luks-label" key)
+	   (string-append " -l " val))
 	  ((eq? "bootdev" key)
 	   (string-append " -b " val))
 	  ((eq? "zpool" key)
@@ -653,6 +655,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     (hostname (utils:assoc-get spec "install" "hostname"))
 	     (sudouser (utils:assoc-get spec "install" "sudouser"))
 	     (password (utils:assoc-get spec "install" "password"))
+	     (luks-label (utils:assoc-get spec "instroot" "luks-label"))
 	     (rootdev (utils:assoc-get spec "instroot" "rootdev"))
 	     (rootdev (and rootdev (caddr (string-split rootdev #\/))))
 	     (bootdev (utils:assoc-get spec "instroot" "bootdev"))
@@ -667,7 +670,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     (rootdev
 	      (expect
 	       ((matcher "verify02" "Please unlock disk ~A:"
-		 (string-append rootdev (if bootdev "1" "3") "_crypt"))
+		 (or luks-label (string-append rootdev (if bootdev "1" "3") "_crypt")))
 		(display passphrase expect-port)
 		(newline expect-port))))
 	     (zpool
