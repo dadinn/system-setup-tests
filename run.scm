@@ -738,11 +738,17 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
 	 (start-time (current-time))
+	 (verify-run (hash-ref options 'verify))
 	 (data-path (hash-ref options 'data-path))
 	 (temp-path (hash-ref options 'temp-path))
+	 (temp-path
+	  (utils:path
+	   temp-path
+	   (or verify-run
+	    (strftime "%Y%m%d_%H%M%S"
+	     (localtime start-time)))))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
-	 (verify-run (hash-ref options 'verify))
 	 (test-names (hash-ref options '()))
 	 (help? (hash-ref options 'help)))
     (cond
@@ -776,18 +782,17 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	 test-specs)
 	",\n")))
      (else
+      (unless (utils:directory? data-path)
+	(utils:mkdir-p data-path))
+      (unless (utils:directory? temp-path)
+	(utils:mkdir-p temp-path))
       (for-each
        (lambda (test-name)
 	(run-test
 	 #:name test-name
 	 #:sources-path project-path
 	 #:data-path data-path
-	 #:temp-path
-	 (utils:path
-	  temp-path
-	  (or verify-run
-	   (strftime "%Y%m%d_%H%M%S"
-	    (localtime start-time))))
+	 #:temp-path temp-path
 	 #:use-network? use-network?
 	 #:sync-mirror? sync-mirror?
 	 #:verify-run verify-run))
