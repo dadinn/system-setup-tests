@@ -195,6 +195,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	("if" . "virtio")))))
     ("instroot"
      ("rootdev" . "/dev/disk/by-id/virtio-main")
+     ("luks-label" . "crypt_root")
      ("swapsize" . "100M")
      ("passphrase" . "asonetuh"))
     ("install"
@@ -251,6 +252,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	("interface" . "virtio")))))
     ("instroot" .
      (("rootdev" . "/dev/disk/by-id/virtio-main")
+      ("luks-label" . "crypt_root")
       ("swapsize" . "100M")
       ("passphrase" . "asonetuh")))
     ("install" .
