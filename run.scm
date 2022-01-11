@@ -401,28 +401,26 @@ Quiting interactive mode is done by typing the `quit' command."
 (define os-mirror-type
   '(("debian" . "apt")))
 
-(define live-isos-spec
- '(("debian"
-    ("bullseye"
-     ("iso"
-      ("filename" . "debian-live-11.1.0-amd64-standard.iso")
-      ("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce"))
-     ("username" . "user")
-     ("password" . "live"))
-    ("buster"
-     ("iso"
-      ("filename" . "debian-live-10.10.0-amd64-standard.iso")
-      ("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce"))
-     ("username" . "user")
-     ("password" . "live")))
-   ("archlinux"
-    ("2020.01.01"
-     ("iso"
-      ("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
-      ("filename" ."archlinux-2020.01.01-x86_64.iso"))))))
+(define live-iso-specs
+  '(("debian" .
+     (("stretch" .
+       (("filename" . "debian-live-9.2.0-amd64-gnome.iso")))
+      ("buster" .
+       (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+	("filename" . "debian-live-10.3.0-amd64-standard.iso")))
+      ("bullseye" .
+       (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
+	("filename" . "debian-live-11.1.0-amd64-standard.iso")))
+      ("archlinux" .
+       (("2020.01.01" .
+	 (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
+	  ("filename" ."archlinux-2020.01.01-x86_64.iso")))))))))
 
 (define (resolve-iso-path data-path spec)
-  (let ((iso-path (utils:path data-path "isos" (assoc-ref spec "filename"))))
+  (let* ((os (utils:assoc-get spec "guest" "os"))
+	 (release (utils:assoc-get spec "guest" "release"))
+	 (iso-path (utils:path data-path "isos"
+	   (utils:assoc-get live-iso-specs os release "filename"))))
     (cond
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
@@ -446,9 +444,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	    os-mirror-type
 	    (utils:assoc-get spec "guest" "os"))))
 	 (cdrom-path
-	  (resolve-iso-path
-	   data-path
-	   (utils:assoc-get spec "guest" "iso")))
+	  (resolve-iso-path data-path spec))
 	 (test-path (utils:path temp-path name))
 	 (logs-path (utils:path test-path "logs"))
 	 (log-port (open-log-port logs-path "output.log"))
