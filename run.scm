@@ -186,9 +186,6 @@ Quiting interactive mode is done by typing the `quit' command."
      ("release" . "buster")
      ("username" . "user")
      ("password" . "live")
-     ("iso" .
-      (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-       ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
      ("drives" .
       ((("name" . "main")
 	("size" . "4G")
@@ -211,9 +208,6 @@ Quiting interactive mode is done by typing the `quit' command."
      ("release" . "buster")
      ("username" . "user")
      ("password" . "live")
-     ("iso" .
-      (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-       ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
      ("drives"
       (("name" . "boot")
        ("size" . "1G")
@@ -243,9 +237,6 @@ Quiting interactive mode is done by typing the `quit' command."
      ("release" . "bullseye")
      ("username" . "user")
      ("password" . "live")
-     ("iso" .
-      (("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-       ("filename" . "debian-live-11.1.0-amd64-standard.iso")))
      ("drives" .
       ((("name" . "main")
 	("size" . "4G")
@@ -268,9 +259,6 @@ Quiting interactive mode is done by typing the `quit' command."
      ("release" . "bullseye")
      ("username" . "user")
      ("password" . "live")
-     ("iso"
-      ("torrent" . "magnet:?xt=urn:btih:f3d7a863cc4eadce466a7aa3194e14ce9179d907&dn=debian-live-11.1.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-      ("filename" . "debian-live-11.1.0-amd64-standard.iso"))
      ("drives"
       (("name" . "boot")
        ("size" . "1G")
