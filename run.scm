@@ -318,7 +318,7 @@ Quiting interactive mode is done by typing the `quit' command."
     (if args
       (format port
        "/mnt/sources/init-instroot/init-instroot.scm -A -p ~A -Z ~A\n"
-       (utils:assoc-get spec "instroot" "passphrase")
+       (or (utils:assoc-get spec "instroot" "passphrase") "IGNORED")
        (string-join args " "))
       (newline port))))
 
@@ -333,7 +333,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	 acc
 	 (cond
 	  ((eq? "passphrase" key)
-	   (string-append " -p " val))
+	   (string-append " -p " (or val "IGNORED")))
 	  ((eq? "rootdev" key)
 	   (string-append " -r " val))
 	  ((eq? "luks-label" key)
@@ -665,7 +665,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 		 (or luks-label (string-append rootdev (if bootdev "1" "3") "_crypt")))
 		(display passphrase expect-port)
 		(newline expect-port))))
-	     (zpool
+	     ((and zpool passphrase)
 	      (expect
 	       ((matcher "verify02" "Enter passphrase for '~A':" zpool)
 		(display passphrase expect-port)
