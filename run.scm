@@ -694,6 +694,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     ((matcher "verify08" "root@~A:~~# " hostname)
 	      (display "lsblk" expect-port)
 	      (newline expect-port)))
+	    (expect
+	     ((matcher "verify08" "root@~A:~~# " hostname)
+	      (display "swapon -s" expect-port)
+	      (newline expect-port)))
 	    (when zpool
 	      (expect
 	       ((matcher "verify09" "root@~A:~~# " hostname)
