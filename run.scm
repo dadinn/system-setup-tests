@@ -88,6 +88,7 @@ Quiting interactive mode is done by typing the `quit' command."
   (let ((port
 	 (apply popen:open-pipe* OPEN_BOTH
 	  `("qemu-system-x86_64"
+	    "-name" ,name
 	    "-enable-kvm"
 	    "-nographic"
 	    ,@(if (not network?)  (list "-nic" "none") '())
