@@ -634,9 +634,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	  (format #t "\nTerminated QEMU process ~A!\n" name)))))
     ;; VERIFY RUN
     (when (not sync-mirror?)
-      (newline)
-      (format #t "Verifying results for ~A" name)
-      (newline)
+      (format #t "\nVerifying results for ~A\n" name)
       (let* ((expect-port
 	      (run-qemu
 	       #:name (string-append name "_verify")
