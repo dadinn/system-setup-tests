@@ -489,7 +489,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	  (else "")))))
     "" (assoc-ref spec "install"))
    (if (not use-network?)
-    "-m http://localhost:8080/debian"
+    "-m http://localhost:8080/debian --no-check-gpg"
     "")))
 
 (define debian-guile-versions
