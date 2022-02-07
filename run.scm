@@ -76,6 +76,10 @@ Quiting interactive mode is done by typing the `quit' command."
 (define (printable-char? c)
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
 
+(define (fetch-pid pipe)
+  ((@@ (ice-9 popen) pipe-info-pid)
+   ((@@ (ice-9 popen) fetch-pipe-info) pipe)))
+
 (define* (run-qemu
 	  #:key name memory network? sources-path mirrors-path cdrom-path drives-path drive-specs uefi?
 	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
@@ -742,6 +746,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     ((matcher "test08" "Shutting down the system...")
 	      (sleep 5))))))
 	(lambda ()
+	  (kill (fetch-pid expect-port) SIGTERM)
 	  (popen:close-pipe expect-port)
 	  (format #t "\nTerminated QEMU process ~A!\n" name)))))
     ;; VERIFY RUN
@@ -827,6 +832,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     ((matcher "verify12" "reboot: Power down")
 	      (sleep 5))))
 	  (lambda ()
+	    (kill (fetch-pid expect-port) SIGTERM)
 	    (popen:close-pipe expect-port)
 	    (format #t "\nTerminated QEMU process verifying ~A!\n" name))))))
       (lambda ()
