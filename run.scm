@@ -811,7 +811,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "verify08" "root@~A:~~# " hostname)
-	      (display "lsblk" expect-port)
+	      (display "lsblk -f" expect-port)
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "verify08" "root@~A:~~# " hostname)
