@@ -176,9 +176,9 @@ Quiting interactive mode is done by typing the `quit' command."
      (default "/tmp/system-setup"))
     (verify
      (single-char #\V)
-     (description "Run verification process only on existing test results for specific run TIMESTAMP.")
+     (description "Run verification process only on existing test results for specific run (by RUNID timestamp).")
      (value #t)
-     (value-arg "TIMESTAMP"))
+     (value-arg "RUNID"))
     (help
      (single-char #\h)
      (description
