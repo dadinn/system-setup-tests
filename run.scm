@@ -540,11 +540,12 @@ Quiting interactive mode is done by typing the `quit' command."
   (setvbuf log-port 'none)
   log-port))
 
-(define* (run-test #:key name temp-path data-path sources-path use-network? sync-mirror? verify-run)
+(define* (run-test #:key name run-id temp-path data-path sources-path use-network? sync-mirror? verify-run)
   (when (not (assoc-ref test-specs name))
     (error "No spec exists for test name!" name))
   (let* ((spec (assoc-ref test-specs name))
 	 (use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
+	 (run-path (utils:path temp-path run-id))
 	 (mirror-path
 	  (utils:path
 	   data-path "mirrors"
@@ -553,7 +554,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	    (utils:assoc-get spec "guest" "os"))))
 	 (cdrom-path
 	  (resolve-iso-path data-path spec))
-	 (test-path (utils:path temp-path name))
+	 (test-path (utils:path run-path name))
 	 (logs-path (utils:path test-path "logs"))
 	 (log-port (open-log-port logs-path "output.log"))
 	 (expect-char-proc
@@ -845,14 +846,12 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	 (options (utils:getopt-extra args options-spec))
 	 (start-time (current-time))
 	 (verify-run (hash-ref options 'verify))
+	 (run-id
+	  (or verify-run
+	   (strftime "%Y%m%d_%H%M%S"
+	     (localtime start-time))))
 	 (data-path (hash-ref options 'data-path))
 	 (temp-path (hash-ref options 'temp-path))
-	 (temp-path
-	  (utils:path
-	   temp-path
-	   (or verify-run
-	    (strftime "%Y%m%d_%H%M%S"
-	     (localtime start-time)))))
 	 (sync-mirror? (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (test-names (hash-ref options '()))
@@ -895,6 +894,7 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
       (for-each
        (lambda (test-name)
 	(run-test
+	 #:run-id run-id
 	 #:name test-name
 	 #:sources-path project-path
 	 #:data-path data-path
