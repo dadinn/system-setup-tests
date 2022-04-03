@@ -419,8 +419,12 @@ Quiting interactive mode is done by typing the `quit' command."
 (define (resolve-iso-path data-path spec)
   (let* ((os (utils:assoc-get spec "guest" "os"))
 	 (release (utils:assoc-get spec "guest" "release"))
-	 (iso-path (utils:path data-path "isos"
+	 (iso-dir (utils:path data-path "isos"))
+	 (iso-path
+	  (utils:path iso-dir
 	   (utils:assoc-get live-iso-specs os release "filename"))))
+    (when (not (utils:directory? iso-dir))
+      (utils:mkdir-p iso-dir))
     (cond
      ((file-exists? iso-path) iso-path)
      (else (error "Cannot find ISO image!" iso-path)))))
