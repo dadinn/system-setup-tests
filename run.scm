@@ -454,6 +454,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (string-append " -r " val))
 	  ((eq? "luks-label" key)
 	   (string-append " -l " val))
+	  ((eq? "uefi" key) " -E")
 	  ((eq? "bootdev" key)
 	   (string-append " -b " val))
 	  ((eq? "zpool" key)
@@ -545,6 +546,7 @@ Quiting interactive mode is done by typing the `quit' command."
     (error "No spec exists for test name!" name))
   (let* ((spec (assoc-ref test-specs name))
 	 (use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
+	 (uefi? (utils:assoc-get spec "guest" "uefi"))
 	 (run-path (utils:path temp-path run-id))
 	 (mirror-path
 	  (utils:path
@@ -594,6 +596,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     #:name name
 	     #:memory "4096"
 	     #:network? (or use-network? sync-mirror?)
+	     #:uefi? uefi?
 	     #:sources-path sources-path
 	     #:mirrors-path mirror-path
 	     #:cdrom-path cdrom-path
@@ -602,13 +605,20 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
       (dynamic-wind
 	(const #t)
 	(lambda ()
-	  (expect
-	   ((matcher "boot01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
-	    (sleep 1)
-	    (display "\t" expect-port)
-	    (sleep 1)
-	    (display " console=ttyS0" expect-port)
-	    (newline expect-port)))
+	  (cond
+	   (uefi?
+	    ;; Generate Live CDs (at least for Debian) which can boot in UEFI from serial console.
+	    ;; Maybe something along these lines:
+	    ;; https://p5r.uk/blog/2020/instaling-debian-over-serial-console.html
+	    (error "Booting does not work from Live CD when using UEFI!!!"))
+	   (else
+	    (expect
+	     ((matcher "boot01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
+	      (sleep 1)
+	      (display "\t" expect-port)
+	      (sleep 1)
+	      (display " console=ttyS0" expect-port)
+	      (newline expect-port)))))
 	  (expect
 	   ((matcher "boot02" "debian login:")
 	    (display live-username expect-port)
