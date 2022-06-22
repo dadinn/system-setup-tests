@@ -430,13 +430,20 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (error "matcher encountered EOF!")))))))
 
 (define (call-init-zpool spec port)
-  (let ((args (assoc-ref spec "zpool")))
-    (if args
+  (let ((args (utils:assoc-get spec "zpool"))
+        (rootdev (utils:assoc-get spec "instroot" "rootdev")))
+    (cond
+     ((and args rootdev)
+      (format port
+       "/mnt/sources/init-instroot/init-instroot.scm -A --without-zfs-native-encryption -Z ~A\n"
+       (string-join args " ")))
+     (args
       (format port
        "/mnt/sources/init-instroot/init-instroot.scm -A -p ~A -Z ~A\n"
-       (or (utils:assoc-get spec "instroot" "passphrase") "IGNORED")
-       (string-join args " "))
-      (newline port))))
+       (or (utils:assoc-get spec "instroot" "passphrase") "IGNORE_THIS")
+       (string-join args " ")))
+     (else
+      (newline port)))))
 
 (define (call-init-instroot spec port)
   (format port
