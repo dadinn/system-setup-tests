@@ -688,9 +688,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "mirror07" "# ")
-	      (newline)
-	      (utils:println "Finished synchronising apt-mirror!")
-	      (newline))))
+              (format #t "\nFinished synchronising apt-mirror!\n"))))
 	   (else
 	    (when (and (not use-network?))
 	     (expect
