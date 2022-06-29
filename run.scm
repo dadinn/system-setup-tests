@@ -497,10 +497,11 @@ Quiting interactive mode is done by typing the `quit' command."
     "-m http://localhost:8080/debian --no-check-gpg"
     "")))
 
-(define debian-guile-versions
-  '(("bullseye" . "guile-3.0")
-    ("buster" . "guile-2.2")
-    ("stretch" . "guile-2.0")))
+(define guest-guile-package
+  '(("debian" .
+      (("bullseye" . "guile-3.0")
+       ("buster" . "guile-2.2")
+       ("stretch" . "guile-2.0")))))
 
 (define os-mirror-type
   '(("debian" . "apt")))
@@ -724,9 +725,9 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "test01" "# ")
-	      (format
-	       expect-port "apt install -y ~A"
-	       (assoc-ref debian-guile-versions
+	      (format expect-port "apt install -y ~A"
+	       (utils:assoc-get guest-guile-package
+		(utils:assoc-get spec "guest" "os")
 		(utils:assoc-get spec "guest" "release")))
 	      (newline expect-port)))
 	    (expect
