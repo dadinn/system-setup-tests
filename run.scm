@@ -396,12 +396,7 @@ Quiting interactive mode is done by typing the `quit' command."
      ("release" . "bullseye")
      ("hostname" . "besenczy")
      ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("archlinux-luks" .
-    (("os" . "archlinux")
-     ("iso" .
-      (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
-       ("filename" ."archlinux-2020.01.01-x86_64.iso")))))))
+     ("password" . "asonetuh")))))
 
 (define (init-matcher log-path)
  (when (not (file-exists? log-path))
