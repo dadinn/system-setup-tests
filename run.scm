@@ -421,7 +421,7 @@ Quiting interactive mode is done by typing the `quit' command."
          (close log-port)
 	 (error "matcher encountered EOF!")))))))
 
-(define (call-init-zpool spec port)
+(define (call-init-zpool port spec)
   (let ((args (utils:assoc-get spec "zpool"))
         (rootdev (utils:assoc-get spec "instroot" "rootdev")))
     (cond
@@ -437,7 +437,7 @@ Quiting interactive mode is done by typing the `quit' command."
      (else
       (newline port)))))
 
-(define (call-init-instroot spec port)
+(define (call-init-instroot port spec)
   (format port
    "/mnt/sources/init-instroot/init-instroot.scm -A ~A\n"
    (srfi1:fold
@@ -474,7 +474,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	  (else "")))))
     "" (assoc-ref spec "instroot"))))
 
-(define* (call-debian-setup spec port #:optional use-network?)
+(define* (call-debian-setup port spec #:optional use-network?)
   (format port
    "/mnt/sources/debian-setup/install.scm -AS ~A ~A\n"
    (srfi1:fold
@@ -731,10 +731,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "test02" "# ")
-	      (call-init-zpool spec expect-port)))
+	      (call-init-zpool expect-port spec)))
 	    (expect
 	     ((matcher "test03" "# ")
-	      (call-init-instroot spec expect-port)))
+	      (call-init-instroot expect-port spec)))
 	    (when (not use-network?)
 	      (expect
 	       ((matcher "test04" "# ")
@@ -751,7 +751,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 		(sleep 10))))
 	    (expect
 	     ((matcher "test07" "# ")
-	      (call-debian-setup spec expect-port use-network?)))
+	      (call-debian-setup expect-port spec use-network?)))
 	    (expect
 	     ((matcher "test08" "FINISHED INSTALLING NEW DEBIAN SYSTEM!")
 	      (display "systemctl poweroff" expect-port)
