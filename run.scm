@@ -257,10 +257,7 @@ Quiting interactive mode is done by typing the `quit' command."
     ("instroot"
      ("bootdev" . "/dev/disk/by-id/virtio-boot")
      ("zpool" . "storage")
-     ("swapsize" . "100M")
-     ;; passphrase must be set for unattended mode even
-     ;; though ZFS v0.6.5 does not support native encryption
-     ("passphrase" . #f))
+     ("swapsize" . "100M"))
     ("install"
      ("os" . "debian")
      ("release" . "stretch")
