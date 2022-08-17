@@ -615,77 +615,56 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	    (expect
 	     ((matcher "boot01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
 	      (sleep 1)
-	      (display "\t" expect-port)
+              (format expect-port "\t")
 	      (sleep 1)
-	      (display " console=ttyS0" expect-port)
-	      (newline expect-port)))))
+              (format expect-port " console=ttyS0\n")))))
 	  (expect
 	   ((matcher "boot02" "debian login:")
-	    (display live-username expect-port)
-	    (newline expect-port)))
+            (format expect-port "~A\n" live-username)))
 	  (expect
 	   ((matcher "boot03" "Password:")
-	    (display live-password expect-port)
-	    (newline expect-port)))
+            (format expect-port "~A\n" live-password)))
 	  (expect
 	   ((matcher "boot04" "\\$ ")
-	    (display "sudo -i" expect-port)
-	    (newline expect-port)))
+            (format expect-port "sudo -i\n")))
 	  (expect
 	   ((matcher "boot05" "# ")
-	    (display "export LC_ALL=C" expect-port)
-	    (newline expect-port)))
+	    (format expect-port "export LC_ALL=C\n")))
 	  (expect
 	   ((matcher "boot06" "# ")
-	    (display "mkdir /mnt/sources" expect-port)
-	    (newline expect-port)))
+	    (format expect-port "mkdir /mnt/sources\n")))
 	  (expect
 	   ((matcher "boot07" "# ")
-	    (display
-	     (string-join
-	      (list
-	       "mount" "-t" "9p" "-o"
-	       (utils:emit-arg-alist
-		'(("trans" . "virtio")
-		  ("msize" . "104857600")
-		  "ro"))
-	       "sources" "/mnt/sources")
-	      " ") expect-port)
-	    (newline expect-port)))
+            (format expect-port
+             "mount -t 9p -o ~A sources /mnt/sources\n"
+             (utils:emit-arg-alist
+	      '(("trans" . "virtio")
+		("msize" . "104857600")
+		"ro")))))
 	  (cond
 	   (sync-mirror?
 	    (expect
 	     ((matcher "mirror01" "# ")
-	      (display "mkdir -p /var/spool/apt-mirror" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
 	    (expect
 	     ((matcher "mirror02" "# ")
-	      (display
-	       (string-join
-		(list
-		 "mount" "-t" "9p" "-o"
-		 (utils:emit-arg-alist
-		  '(("trans" . "virtio")
-		    ("msize" . "104857600")))
-		 "mirrors" "/var/spool/apt-mirror")
-		" ") expect-port)
-	      (newline expect-port)))
+              (format expect-port
+               "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
+               (utils:emit-arg-alist
+		'(("trans" . "virtio")
+		  ("msize" . "104857600"))))))
 	    (expect
 	     ((matcher "mirror03" "# ")
-	      (display "apt update" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "apt update\n")))
 	    (expect
 	     ((matcher "mirror04" "# ")
-	      (display "apt install -y apt-mirror" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "apt install -y apt-mirror\n")))
 	    (expect
 	     ((matcher "mirror05" "# ")
-	      (display "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/\n")))
 	    (expect
 	     ((matcher "mirror06" "# ")
-	      (display "apt-mirror" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "apt-mirror\n")))
 	    (expect
 	     ((matcher "mirror07" "# ")
               (format #t "\nFinished synchronising apt-mirror!\n"))))
@@ -693,34 +672,24 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	    (when (and (not use-network?))
 	     (expect
 	      ((matcher "mirror08" "# ")
-	       (display "mkdir -p /var/spool/apt-mirror" expect-port)
-	       (newline expect-port)))
+	       (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
 	     (expect
 	      ((matcher "mirror09" "# ")
-	       (display
-		(string-join
-		 (list
-		  "mount" "-t" "9p" "-o"
-		  (utils:emit-arg-alist
-		   '(("trans" . "virtio")
-		     ("msize" . "104857600")
-		     "ro"))
-		  "mirrors" "/var/spool/apt-mirror")
-		 " ")
-		expect-port)
-	       (newline expect-port)))
+               (format expect-port
+                "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
+                (utils:emit-arg-alist
+		 '(("trans" . "virtio")
+		   ("msize" . "104857600")
+		   "ro")))))
 	     (expect
 	      ((matcher "mirror10" "# ")
-	       (display "if [ -e /etc/apt/sources.list.d/base.list ]; then echo updating /etc/apt/sources.list; mv /etc/apt/sources.list.d/base.list /etc/apt/sources.list; fi" expect-port)
-	       (newline expect-port)))
+	       (format expect-port "if [ -e /etc/apt/sources.list.d/base.list ]; then echo updating /etc/apt/sources.list; mv /etc/apt/sources.list.d/base.list /etc/apt/sources.list; fi\n")))
 	     (expect
 	      ((matcher "mirror11" "# ")
-	       (display "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list" expect-port)
-	       (newline expect-port))))
+	       (format expect-port "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list\n"))))
 	    (expect
 	     ((matcher "mirror12" "# ")
-	      (display "apt update" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "apt update\n")))
 	    (expect
 	     ((matcher "test01" "# ")
 	      (format expect-port "apt install -y ~A"
@@ -737,24 +706,20 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	    (when (not use-network?)
 	      (expect
 	       ((matcher "test04" "# ")
-		(display "apt install -y nginx" expect-port)
-		(newline expect-port)))
+		(format expect-port "apt install -y nginx\n")))
 	      (expect
 	       ((matcher "test05"  "# ")
-		(display "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/" expect-port)
-		(newline expect-port)))
+		(format expect-port "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/\n")))
 	      (expect
 	       ((matcher "test06" "# ")
-		(display "systemctl restart nginx" expect-port)
-		(newline expect-port)
+		(format expect-port "systemctl restart nginx\n")
 		(sleep 10))))
 	    (expect
 	     ((matcher "test07" "# ")
 	      (call-debian-setup expect-port spec use-network?)))
 	    (expect
 	     ((matcher "test08" "FINISHED INSTALLING NEW DEBIAN SYSTEM!")
-	      (display "systemctl poweroff" expect-port)
-	      (newline expect-port)
+	      (format expect-port "systemctl poweroff\n")
 	      (sleep 5))))))
 	(lambda ()
 	  (kill (fetch-pid expect-port) SIGTERM)
@@ -791,54 +756,44 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      (expect
 	       ((matcher "verify02" "Please unlock disk ~A:"
 		 (or luks-label (string-append rootdev (if bootdev "1" "3") "_crypt")))
-		(display passphrase expect-port)
-		(newline expect-port))))
+                (format expect-port "~A\n" passphrase))))
 	     ((and zpool passphrase)
 	      (expect
 	       ((matcher "verify02" "Enter passphrase for '~A':" zpool)
-		(display passphrase expect-port)
-		(newline expect-port)))))
+                (format expect-port "~A\n" passphrase)))))
 	    (expect
 	     ((matcher "verify03" "login: ")
-	      (display sudouser expect-port)
-	      (newline expect-port)))
+              (format expect-port "~A\n" sudouser)))
 	    (expect
 	     ((matcher "verify04" "Password: ")
-	      (display password expect-port)
-	      (newline expect-port)))
+              (format expect-port "~A\n" password)))
 	    (expect
 	     ((matcher "verify05" "~A@~A:~~\\$ " sudouser hostname)
-	      (display "sudo -i" expect-port)
-	      (newline expect-port)))
+              (format expect-port "sudo -i\n")))
 	    (expect
 	     ((matcher "verify06" "\\[sudo\\] password for ~A: " sudouser)
-	      (display password expect-port)
-	      (newline expect-port)))
+              (format expect-port "~A\n" password)))
 	    (expect
 	     ((matcher "verify07" "root@~A:~~# " hostname)
-	      (display "export LC_ALL=C" expect-port)
+	      (format expect-port "export LC_ALL=C\n")))
+	    (expect
+	     ((matcher "verify08" "root@~A:~~# " hostname)
+	      (format expect-port "lsblk -f\n")
 	      (newline expect-port)))
 	    (expect
 	     ((matcher "verify08" "root@~A:~~# " hostname)
-	      (display "lsblk -f" expect-port)
-	      (newline expect-port)))
-	    (expect
-	     ((matcher "verify08" "root@~A:~~# " hostname)
-	      (display "swapon -s" expect-port)
+	      (format expect-port "swapon -s\n")
 	      (newline expect-port)))
 	    (when zpool
 	      (expect
 	       ((matcher "verify09" "root@~A:~~# " hostname)
-		(display "zpool status -P" expect-port)
-		(newline expect-port)))
+		(format expect-port "zpool status -P\n")))
 	      (expect
 	       ((matcher "verify10" "root@~A:~~# " hostname)
-		(display "zfs list -t all" expect-port)
-		(newline expect-port))))
+		(format expect-port "zfs list -t all\n"))))
 	    (expect
 	     ((matcher "verify11" "root@~A:~~# " hostname)
-	      (display "systemctl poweroff" expect-port)
-	      (newline expect-port)))
+	      (format expect-port "systemctl poweroff\n")))
 	    (expect
 	     ((matcher "verify12" "reboot: Power down")
 	      (sleep 5))))
