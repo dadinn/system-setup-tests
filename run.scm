@@ -521,10 +521,8 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
 	  ("filename" ."archlinux-2020.01.01-x86_64.iso")))))))))
 
-(define (resolve-iso-path data-path spec)
-  (let* ((os (utils:assoc-get spec "guest" "os"))
-	 (release (utils:assoc-get spec "guest" "release"))
-	 (iso-dir (utils:path data-path "isos"))
+(define (resolve-iso-path data-path os release)
+  (let* ((iso-dir (utils:path data-path "isos"))
 	 (iso-path
 	  (utils:path iso-dir
 	   (utils:assoc-get live-iso-specs os release "filename"))))
@@ -554,8 +552,9 @@ Quiting interactive mode is done by typing the `quit' command."
 	   (assoc-ref
 	    os-mirror-type
 	    (utils:assoc-get spec "guest" "os"))))
-	 (cdrom-path
-	  (resolve-iso-path data-path spec))
+	 (os (utils:assoc-get spec "guest" "os"))
+	 (release (utils:assoc-get spec "guest" "release"))
+	 (cdrom-path (resolve-iso-path data-path os release))
 	 (test-path (utils:path run-path name))
 	 (logs-path (utils:path test-path "logs"))
 	 (log-port (open-log-port logs-path "output.log"))
