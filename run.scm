@@ -81,7 +81,7 @@ Quiting interactive mode is done by typing the `quit' command."
    ((@@ (ice-9 popen) fetch-pipe-info) pipe)))
 
 (define* (run-qemu
-	  #:key name memory network? sources-path mirrors-path cdrom-path drives-path drive-specs uefi?
+	  #:key name memory network? sources-path mirrors-path cdrom-path drives-path (drive-specs '()) uefi?
 	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
 	  (ovmf-vars-file "/usr/share/OVMF/OVMF_VARS.fd"))
   (when uefi?
