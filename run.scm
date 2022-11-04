@@ -668,7 +668,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     ((matcher "mirror07" "# ")
               (format #t "\nFinished synchronising apt-mirror!\n"))))
 	   (else
-	    (when (and (not use-network?))
+	    (when (not use-network?)
 	     (expect
 	      ((matcher "mirror08" "# ")
 	       (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
