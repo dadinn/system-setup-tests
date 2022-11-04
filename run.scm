@@ -166,7 +166,6 @@ Quiting interactive mode is done by typing the `quit' command."
       "Path to store temporary mirrors, isos, etc.")
      (value #t)
      (value-arg "path")
-     (predicate ,utils:directory?)
      (default "/var/tmp/system-setup"))
     (temp-path
      (single-char #\t)
@@ -174,7 +173,6 @@ Quiting interactive mode is done by typing the `quit' command."
       "Path to store temporary test files, including drives, logs, etc.")
      (value #t)
      (value-arg "path")
-     (predicate ,utils:directory?)
      (default "/tmp/system-setup"))
     (verify
      (single-char #\V)
@@ -891,6 +889,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (use-network? (hash-ref options 'use-network))
 	 (test-names (hash-ref options '()))
 	 (help? (hash-ref options 'help)))
+    (unless (utils:directory? data-path)
+      (utils:mkdir-p data-path))
+    (unless (utils:directory? temp-path)
+      (utils:mkdir-p temp-path))
     (cond
      (help?
       (format #t "
@@ -925,10 +927,6 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
       (let ((spec (assoc-ref mirror-specs mirror-type)))
         (run-mirror-sync spec run-id project-path temp-path data-path)))
      (else
-      (unless (utils:directory? data-path)
-	(utils:mkdir-p data-path))
-      (unless (utils:directory? temp-path)
-	(utils:mkdir-p temp-path))
       (for-each
        (lambda (test-name)
 	(run-test
