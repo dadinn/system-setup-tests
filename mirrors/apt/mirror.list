@@ -1,11 +1,11 @@
 # Watch out these will require around 400Gb space!
 # Feel free to comment out the directives not needed!
 
-deb http://deb.debian.org/debian/ jessie main
-deb http://deb.debian.org/debian/ jessie-backports main contrib
-deb http://deb.debian.org/debian/ buster main
-deb http://deb.debian.org/debian/ buster-backports main contrib
-deb http://deb.debian.org/debian/ stretch main contrib
-deb http://deb.debian.org/debian/ bullseye main contrib
+deb http://deb.debian.org/debian jessie main
+deb http://deb.debian.org/debian jessie-backports main contrib
+deb http://deb.debian.org/debian buster main
+deb http://deb.debian.org/debian buster-backports main contrib
+deb http://deb.debian.org/debian stretch main contrib
+deb http://deb.debian.org/debian bullseye main contrib
 
-clean http://deb.debian.org/debian/
+clean http://deb.debian.org/debian
