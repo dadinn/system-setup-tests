@@ -683,7 +683,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		(format expect-port "apt install -y nginx\n")))
 	      (expect
 	       ((matcher "test05"  "# ")
-		(format expect-port "cp /mnt/sources/tests/mirrors/apt/apt-mirror.conf /etc/nginx/conf.d/\n")))
+		(format expect-port "cp /mnt/sources/tests/resources/nginx/apt-mirror.conf /etc/nginx/conf.d/\n")))
 	      (expect
 	       ((matcher "test06" "# ")
 		(format expect-port "systemctl restart nginx\n")
@@ -861,7 +861,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
                 (format expect-port "apt install -y apt-mirror\n")))
               (expect
                ((matcher "mirror03" "# ")
-                (format expect-port "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/\n")))
+                (format expect-port "cp /mnt/sources/tests/resources/apt/mirror.list /etc/apt/\n")))
               (expect
                ((matcher "mirror04" "# ")
                 (format expect-port "apt-mirror\n")))
