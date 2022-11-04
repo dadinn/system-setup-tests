@@ -138,7 +138,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		   ("mount_tag" . "sources")
 		   ("security_model" . "mapped"))))
 	       '())
-	    ,@(if (and mirrors-path (not network?))
+	    ,@(if mirrors-path
 	       (list
 		"-virtfs"
 		(utils:emit-arg-alist
