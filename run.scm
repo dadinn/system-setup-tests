@@ -153,6 +153,8 @@ Quiting interactive mode is done by typing the `quit' command."
 
 (define options-spec
   `((sync-mirror
+     (value #t)
+     (value-arg "type")
      (single-char #\M)
      (description "Synchronise local apt-mirror via internet, and then exit."))
     (use-network
@@ -506,6 +508,13 @@ Quiting interactive mode is done by typing the `quit' command."
 (define os-mirror-type
   '(("debian" . "apt")))
 
+(define mirror-specs
+  '(("apt" .
+     (("os" . "debian")
+      ("release" . "bullseye")
+      ("username" . "user")
+      ("password" . "live")))))
+
 (define live-iso-specs
   '(("debian" .
      (("stretch" .
@@ -539,7 +548,7 @@ Quiting interactive mode is done by typing the `quit' command."
   (setvbuf log-port 'none)
   log-port))
 
-(define* (run-test #:key name run-id temp-path data-path sources-path use-network? sync-mirror? verify-run)
+(define* (run-test #:key name run-id temp-path data-path sources-path use-network? verify-run)
   (when (not (assoc-ref test-specs name))
     (error "No spec exists for test name!" name))
   (let* ((spec (assoc-ref test-specs name))
@@ -572,13 +581,9 @@ Quiting interactive mode is done by typing the `quit' command."
       (lambda ()
     ;; START RUN
     (when (not verify-run)
-      (when (not (utils:directory? mirror-path))
-	(cond
-	 (sync-mirror?
-	  (utils:mkdir-p mirror-path))
-	 ((not use-network?)
-	  (error "Not using network, yet local mirror directory doesn't exist!.
-Either run with networking enabled, or synchronise apt-mirror first!"))))
+      (when (not (or use-network? (utils:directory? mirror-path)))
+	(error "Not using network, yet local mirror directory doesn't exist!.
+Either run with networking enabled, or synchronise apt-mirror first!"))
     (when (not (utils:directory? drives-path))
       (utils:mkdir-p drives-path))
     (for-each
@@ -594,7 +599,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	    (run-qemu
 	     #:name name
 	     #:memory "4096"
-	     #:network? (or use-network? sync-mirror?)
+	     #:network? use-network?
 	     #:uefi? uefi?
 	     #:sources-path sources-path
 	     #:mirrors-path mirror-path
@@ -640,40 +645,12 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	      '(("trans" . "virtio")
 		("msize" . "104857600")
 		"ro")))))
-	  (cond
-	   (sync-mirror?
-	    (expect
-	     ((matcher "mirror01" "# ")
-	      (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
-	    (expect
-	     ((matcher "mirror02" "# ")
-              (format expect-port
-               "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
-               (utils:emit-arg-alist
-		'(("trans" . "virtio")
-		  ("msize" . "104857600"))))))
-	    (expect
-	     ((matcher "mirror03" "# ")
-	      (format expect-port "apt update\n")))
-	    (expect
-	     ((matcher "mirror04" "# ")
-	      (format expect-port "apt install -y apt-mirror\n")))
-	    (expect
-	     ((matcher "mirror05" "# ")
-	      (format expect-port "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/\n")))
-	    (expect
-	     ((matcher "mirror06" "# ")
-	      (format expect-port "apt-mirror\n")))
-	    (expect
-	     ((matcher "mirror07" "# ")
-              (format #t "\nFinished synchronising apt-mirror!\n"))))
-	   (else
 	    (when (not use-network?)
 	     (expect
-	      ((matcher "mirror08" "# ")
+	      ((matcher "mirror01" "# ")
 	       (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
 	     (expect
-	      ((matcher "mirror09" "# ")
+	      ((matcher "mirror02" "# ")
                (format expect-port
                 "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
                 (utils:emit-arg-alist
@@ -681,13 +658,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 		   ("msize" . "104857600")
 		   "ro")))))
 	     (expect
-	      ((matcher "mirror10" "# ")
+	      ((matcher "mirror03" "# ")
 	       (format expect-port "if [ -e /etc/apt/sources.list.d/base.list ]; then echo updating /etc/apt/sources.list; mv /etc/apt/sources.list.d/base.list /etc/apt/sources.list; fi\n")))
 	     (expect
-	      ((matcher "mirror11" "# ")
+	      ((matcher "mirror04" "# ")
 	       (format expect-port "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list\n"))))
 	    (expect
-	     ((matcher "mirror12" "# ")
+	     ((matcher "test00" "# ")
 	      (format expect-port "apt update\n")))
 	    (expect
 	     ((matcher "test01" "# ")
@@ -719,13 +696,12 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	    (expect
 	     ((matcher "test08" "FINISHED INSTALLING NEW DEBIAN SYSTEM!")
 	      (format expect-port "systemctl poweroff\n")
-	      (sleep 5))))))
+	      (sleep 5))))
 	(lambda ()
 	  (kill (fetch-pid expect-port) SIGTERM)
 	  (popen:close-pipe expect-port)
 	  (format #t "\nTerminated QEMU process for test ~A, run ~A!\n" name run-id)))))
     ;; VERIFY RUN
-    (when (not sync-mirror?)
       (format #t "\nVerifying results for ~A\n" name)
       (let* ((expect-port
 	      (run-qemu
@@ -799,9 +775,106 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	  (lambda ()
 	    (kill (fetch-pid expect-port) SIGTERM)
 	    (popen:close-pipe expect-port)
-	    (format #t "\nTerminated QEMU process verifying test ~A, run ~A!\n" name run-id))))))
+	    (format #t "\nTerminated QEMU process verifying test ~A, run ~A!\n" name run-id)))))
       (lambda ()
 	(close-port log-port)))))
+
+(define* (run-mirror-sync guest-spec run-id sources-path temp-path data-path)
+  (let* ((name "mirror-sync")
+         (os (utils:assoc-get guest-spec "os"))
+         (release (utils:assoc-get guest-spec "release"))
+         (run-path (utils:path temp-path run-id))
+         (mirror-path
+          (utils:path
+           data-path "mirrors"
+           (assoc-ref
+            os-mirror-type os)))
+         (cdrom-path (resolve-iso-path data-path os release))
+         (test-path (utils:path run-path name))
+         (logs-path (utils:path test-path "logs"))
+         (log-port (open-log-port logs-path "output.log"))
+         (expect-char-proc
+          (lambda (c)
+            (display c log-port)
+            (display c)))
+         (matcher (init-matcher (utils:path logs-path "expect")))
+         (live-username (utils:assoc-get guest-spec "username"))
+         (live-password (utils:assoc-get guest-spec "password")))
+    (dynamic-wind
+      (const #t)
+      (lambda ()
+        (when (not (utils:directory? mirror-path))
+          (utils:mkdir-p mirror-path))
+        (let* ((expect-port
+                (run-qemu
+                 #:name name
+                 #:memory "1024"
+                 #:network? #t
+                 #:cdrom-path cdrom-path
+                 #:mirrors-path mirror-path
+                 #:sources-path sources-path)))
+          (dynamic-wind
+            (const #t)
+            (lambda ()
+              (expect
+               ((matcher "boot01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
+                (sleep 1)
+                (format expect-port "\t")
+                (sleep 1)
+                (format expect-port " console=ttyS0\n")))
+              (expect
+               ((matcher "boot02" "debian login:")
+                (format expect-port "~A\n" live-username)))
+              (expect
+               ((matcher "boot03" "Password:")
+                (format expect-port "~A\n" live-password)))
+              (expect
+               ((matcher "boot04" "\\$ ")
+                (format expect-port "sudo -i\n")))
+              (expect
+               ((matcher "boot05" "# ")
+                (format expect-port "export LC_ALL=C\n")))
+              (expect
+               ((matcher "mount01" "# ")
+                (format expect-port "mkdir /mnt/sources\n")))
+              (expect
+               ((matcher "mount02" "# ")
+                (format expect-port
+                 "mount -t 9p -o ~A sources /mnt/sources\n"
+                 (utils:emit-arg-alist
+                  '(("trans" . "virtio")
+                    ("msize" . "104857600")
+                    "ro")))))
+              (expect
+               ((matcher "mount03" "# ")
+                (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
+              (expect
+               ((matcher "mount04" "# ")
+                (format expect-port
+                 "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
+                 (utils:emit-arg-alist
+                  '(("trans" . "virtio")
+                    ("msize" . "104857600"))))))
+              (expect
+               ((matcher "mirror01" "# ")
+                (format expect-port "apt update\n")))
+              (expect
+               ((matcher "mirror02" "# ")
+                (format expect-port "apt install -y apt-mirror\n")))
+              (expect
+               ((matcher "mirror03" "# ")
+                (format expect-port "cp /mnt/sources/tests/mirrors/apt/mirror.list /etc/apt/\n")))
+              (expect
+               ((matcher "mirror04" "# ")
+                (format expect-port "apt-mirror\n")))
+              (expect
+               ((matcher "mirror05" "# ")
+                (format #t "\nFinished synchronising apt-mirror!\n"))))
+            (lambda ()
+              (kill (fetch-pid expect-port) SIGTERM)
+              (popen:close-pipe expect-port)
+              (format #t "\nTerminated QEMU process test ~A, run ~A!\n" name run-id)))))
+      (lambda () (close-port log-port)))))
 
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
@@ -814,7 +887,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))))
 	     (localtime start-time))))
 	 (data-path (hash-ref options 'data-path))
 	 (temp-path (hash-ref options 'temp-path))
-	 (sync-mirror? (hash-ref options 'sync-mirror))
+	 (mirror-type (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (test-names (hash-ref options '()))
 	 (help? (hash-ref options 'help)))
@@ -848,6 +921,9 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	    (car spec)))
 	 test-specs)
 	",\n")))
+     (mirror-type
+      (let ((spec (assoc-ref mirror-specs mirror-type)))
+        (run-mirror-sync spec run-id project-path temp-path data-path)))
      (else
       (unless (utils:directory? data-path)
 	(utils:mkdir-p data-path))
@@ -862,7 +938,6 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	 #:data-path data-path
 	 #:temp-path temp-path
 	 #:use-network? use-network?
-	 #:sync-mirror? sync-mirror?
 	 #:verify-run verify-run))
        (if (null? test-names)
 	(map (lambda (spec) (car spec))
