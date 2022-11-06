@@ -546,7 +546,7 @@ Quiting interactive mode is done by typing the `quit' command."
   (setvbuf log-port 'none)
   log-port))
 
-(define* (run-test #:key name run-id temp-path data-path sources-path use-network? verify-run)
+(define* (run-test #:key name run-id temp-path data-path sources-path use-network? verify-only?)
   (when (not (assoc-ref test-specs name))
     (error "No spec exists for test name!" name))
   (let* ((spec (assoc-ref test-specs name))
@@ -578,7 +578,7 @@ Quiting interactive mode is done by typing the `quit' command."
       (const #t)
       (lambda ()
     ;; START RUN
-    (when (not verify-run)
+    (when (not verify-only?)
       (when (not (or use-network? (utils:directory? mirror-path)))
 	(error "Not using network, yet local mirror directory doesn't exist!.
 Either run with networking enabled, or synchronise apt-mirror first!"))
@@ -878,9 +878,9 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
   (let* ((project-path (dirname (dirname (current-filename))))
 	 (options (utils:getopt-extra args options-spec))
 	 (start-time (current-time))
-	 (verify-run (hash-ref options 'verify))
+	 (verify-run-id (hash-ref options 'verify))
 	 (run-id
-	  (or verify-run
+	  (or verify-run-id
 	   (strftime "%Y%m%d_%H%M%S"
 	     (localtime start-time))))
 	 (data-path (hash-ref options 'data-path))
@@ -936,7 +936,7 @@ When no test spec ID is specified, only the enabled tests (ones marked with *) a
 	 #:data-path data-path
 	 #:temp-path temp-path
 	 #:use-network? use-network?
-	 #:verify-run verify-run))
+	 #:verify-only? (not (not verify-run-id))))
        (if (null? test-names)
 	(map (lambda (spec) (car spec))
 	 (filter
