@@ -14,6 +14,7 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 rdelim) #:prefix rdelim:)
  ((ice-9 readline) #:select (readline))
  ((ice-9 format) #:select (format))
+ ((ice-9 ftw) #:select (scandir))
  ((ice-9 expect)
   #:select
   ((expect . expect-old)
@@ -151,7 +152,7 @@ Quiting interactive mode is done by typing the `quit' command."
     (set-port-encoding! port "UTF-8")
     port))
 
-(define options-spec
+(define (options-spec project-path)
   `((sync-mirror
      (value #t)
      (value-arg "type")
@@ -174,6 +175,14 @@ Quiting interactive mode is done by typing the `quit' command."
      (value #t)
      (value-arg "path")
      (default "/tmp/system-setup"))
+    (specs-path
+     (single-char #\s)
+     (description
+      ,(format #f "Path to test specifications."))
+     (value #t)
+     (value-arg "path")
+     (predicate utils:directory?)
+     (default ,(utils:path project-path "tests" "resources" "specs")))
     (verify
      (single-char #\V)
      (description "Run verification process only on existing test results for specific run (by RUNID timestamp).")
@@ -183,217 +192,6 @@ Quiting interactive mode is done by typing the `quit' command."
      (single-char #\h)
      (description
       "This usage help..."))))
-
-(define test-specs
- '(("debian-stretch-luks"
-    ("guest"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "luks")
-       ("size" . "4G")
-       ("interface" . "virtio"))))
-    ("instroot"
-     ("rootdev" . "/dev/disk/by-id/virtio-luks")
-     ("luks-label" . "crypt_root")
-     ("swapsize" . "100M")
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-stretch-luks-zfs"
-    ("guest"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "luks")
-       ("size" . "4G")
-       ("interface" . "virtio"))
-      (("name" . "zfs1")
-       ("size" . "1G")
-       ("interface" . "virtio"))
-      (("name" . "zfs2")
-       ("size" . "1G")
-       ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
-    ("instroot"
-     ("rootdev" . "/dev/disk/by-id/virtio-luks")
-     ("luks-label" . "crypt_root")
-     ("zpool" . "storage")
-     ("swapsize" . "100M")
-     ;; passphrase must be set for unattended mode even
-     ;; though ZFS v0.6.5 does not support native encryption
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-stretch-zfs"
-    ("guest"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "boot")
-       ("size" . "1G")
-       ("interface" . "virtio"))
-      (("name" . "zfs1")
-       ("size" . "2G")
-       ("interface" . "virtio"))
-      (("name" . "zfs2")
-       ("size" . "2G")
-       ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
-    ("instroot"
-     ("bootdev" . "/dev/disk/by-id/virtio-boot")
-     ("zpool" . "storage")
-     ("swapsize" . "100M"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "stretch")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-buster-luks"
-    ("guest"
-     ("os" . "debian")
-     ("release" . "buster")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives" .
-      ((("name" . "main")
-	("size" . "4G")
-	("if" . "virtio")))))
-    ("instroot"
-     ("rootdev" . "/dev/disk/by-id/virtio-main")
-     ("luks-label" . "crypt_root")
-     ("swapsize" . "100M")
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "buster")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-buster-zfs"
-    ("guest"
-     ("network" . #t)
-     ("os" . "debian")
-     ("release" . "buster")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "boot")
-       ("size" . "1G")
-       ("interface" . "virtio"))
-      (("name" . "zfs1")
-       ("size" . "3G")
-       ("interface" . "virtio"))
-      (("name" . "zfs2")
-       ("size" . "3G")
-       ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
-    ("instroot"
-     ("zpool" . "storage")
-     ("bootdev" . "/dev/disk/by-id/virtio-boot")
-     ("swapsize" . "100M")
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "buster")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-bullseye-luks"
-    ("enabled" . #t)
-    ("guest"
-     ("os" . "debian")
-     ("release" . "bullseye")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives" .
-      ((("name" . "main")
-	("size" . "4G")
-	("interface" . "virtio")))))
-    ("instroot" .
-     (("rootdev" . "/dev/disk/by-id/virtio-main")
-      ("luks-label" . "crypt_root")
-      ("swapsize" . "100M")
-      ("passphrase" . "asonetuh")))
-    ("install" .
-     (("os" . "debian")
-      ("release" . "bullseye")
-      ("hostname" . "besenczy")
-      ("sudouser" . "dadinn")
-      ("password" . "asonetuh"))))
-   ("debian-bullseye-zfs"
-    ("enabled" . #t)
-    ("guest"
-     ("os" . "debian")
-     ("release" . "bullseye")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "boot")
-       ("size" . "1G")
-       ("interface" . "virtio"))
-      (("name" . "zfs1")
-       ("size" . "3G")
-       ("interface" . "virtio"))
-      (("name" . "zfs2")
-       ("size" . "3G")
-       ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
-    ("instroot"
-     ("zpool" . "storage")
-     ("bootdev" . "/dev/disk/by-id/virtio-boot")
-     ("swapsize" . "100M")
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "bullseye")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))
-   ("debian-bullseye-luks-zfs"
-    ("guest"
-     ("os" . "debian")
-     ("release" . "bullseye")
-     ("username" . "user")
-     ("password" . "live")
-     ("drives"
-      (("name" . "main")
-       ("size" . "3G")
-       ("interface" . "virtio"))
-      (("name" . "zfs1")
-       ("size" . "3G")
-       ("interface" . "virtio"))
-      (("name" . "zfs2")
-       ("size" . "3G")
-       ("interface" . "virtio"))))
-    ("zpool" "storage" "mirror" "/dev/disk/by-id/virtio-zfs1" "/dev/disk/by-id/virtio-zfs2")
-    ("instroot"
-     ("rootdev" . "/dev/disk/by-id/virtio-main")
-     ("luks-label" . "vda3_crypt")
-     ("zpool" . "storage")
-     ("swapsize" . "100M")
-     ("passphrase" . "asonetuh"))
-    ("install"
-     ("os" . "debian")
-     ("release" . "bullseye")
-     ("hostname" . "besenczy")
-     ("sudouser" . "dadinn")
-     ("password" . "asonetuh")))))
 
 (define (init-matcher log-path)
  (when (not (file-exists? log-path))
@@ -546,11 +344,8 @@ Quiting interactive mode is done by typing the `quit' command."
   (setvbuf log-port 'none)
   log-port))
 
-(define* (run-test #:key name run-id temp-path data-path sources-path use-network? verify-only?)
-  (when (not (assoc-ref test-specs name))
-    (error "No spec exists for test name!" name))
-  (let* ((spec (assoc-ref test-specs name))
-	 (use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
+(define* (run-test name spec run-id temp-path data-path sources-path #:key use-network? verify-only?)
+  (let* ((use-network? (or use-network? (assoc-get spec "guest" "network")))
 	 (uefi? (utils:assoc-get spec "guest" "uefi"))
 	 (run-path (utils:path temp-path run-id))
 	 (mirror-path
@@ -874,9 +669,35 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
               (format #t "\nTerminated QEMU process test ~A, run ~A!\n" name run-id)))))
       (lambda () (close-port log-port)))))
 
+(define (find-test-names specs-path)
+  (let ((pattern "([a-zA-Z_-]+).scm$"))
+    (map
+     (lambda (f)
+       (regex:match:substring
+        (regex:string-match pattern f) 1))
+     (scandir specs-path
+      (lambda (f)
+        (and (not (utils:directory? (utils:path specs-path f)))
+         (regex:string-match pattern f)))))))
+
+(define (load-test-specs specs-path test-name)
+  (let* ((dir-path (utils:path specs-path test-name))
+         (file-path (string-append dir-path ".scm")))
+    (cond
+     ((utils:directory? dir-path)
+      (srfi1:append-map
+       (lambda (t) (load-test-specs specs-path t))
+       (find-test-names dir-path)))
+     ((file-exists? file-path)
+      (let* ((port (open-input-file file-path))
+             (spec (read port)))
+        (close port)
+        (list (cons test-name spec))))
+     (else (list (cons test-name #f))))))
+
 (define (main args)
   (let* ((project-path (dirname (dirname (current-filename))))
-	 (options (utils:getopt-extra args options-spec))
+	 (options (utils:getopt-extra args (options-spec project-path)))
 	 (start-time (current-time))
 	 (verify-run-id (hash-ref options 'verify))
 	 (run-id
@@ -885,6 +706,12 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	     (localtime start-time))))
 	 (data-path (hash-ref options 'data-path))
 	 (temp-path (hash-ref options 'temp-path))
+         (specs-path (hash-ref options 'specs-path))
+         (test-spec-names (find-test-names specs-path))
+         (alias-names
+          (scandir specs-path
+           (lambda (f) (utils:directory? (utils:path specs-path f)))))
+         (alias-names (cddr alias-names))
 	 (mirror-type (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
 	 (test-names (hash-ref options '()))
@@ -894,8 +721,9 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
     (unless (utils:directory? temp-path)
       (utils:mkdir-p temp-path))
     (cond
-     (help?
-      (format #t "
+     ((or help? (and (not mirror-type) (null? test-names)))
+      (format
+       #t "
 Start up Qemu/KVM machine to run test specs based on specified IDs.
 
 USAGE:
@@ -906,46 +734,45 @@ Valid OPTION value are:
 
 ~A
 
-The following test specification ID values are avaible:
-
-~A
-
-When no test spec ID is specified, only the enabled tests (ones marked with *) are run.
-
 "
        (basename (car args))
-       (utils:usage options-spec)
-       (string-join
-	(map
-	 (lambda (spec)
-	   (if (assoc-ref spec "enabled")
-	    (string-append (car spec) "*")
-	    (car spec)))
-	 test-specs)
-	",\n")))
+       (utils:usage (options-spec project-path)))
+      (if (null? test-spec-names)
+          (display "No test specificications have been defined yet!\n\n")
+          (format
+           #t "The following test specification names are defined:\n\n~A\n\n"
+           (string-join test-spec-names ",\n")))
+      (if (null? alias-names)
+          (display "No test aliases have been defined yet!\n\n")
+          (format
+           #t "The following test aliases are defined:\n\n~A\n\n"
+           (string-join alias-names ",\n"))))
      (mirror-type
       (let ((spec (assoc-ref mirror-specs mirror-type)))
         (run-mirror-sync spec run-id project-path temp-path data-path)))
      (else
-      (for-each
-       (lambda (test-name)
-	(run-test
-	 #:run-id run-id
-	 #:name test-name
-	 #:sources-path project-path
-	 #:data-path data-path
-	 #:temp-path temp-path
-	 #:use-network? use-network?
-	 #:verify-only? (not (not verify-run-id))))
-       (if (null? test-names)
-	(map (lambda (spec) (car spec))
-	 (filter
-	  (lambda (spec) (assoc-ref spec "enabled"))
-	  test-specs))
-	(map
-	 (lambda (name)
-	  (if (not (assoc-ref test-specs name))
-	   (error "No spec exists for test name!" name)
-	   name))
-	 test-names)))))))
-
+      (let ((test-specs
+             (srfi1:append-map
+              (lambda (test-name)
+                (load-test-specs specs-path test-name))
+              test-names)))
+        (cond
+         ((srfi1:any (negate cdr) test-specs)
+          (for-each
+           (lambda (pair)
+             (let ((test-name (car pair))
+                   (spec (cdr pair)))
+               (unless spec
+                 (format #t "\nCould not find test specification for ~A!\n" test-name))))
+           test-specs)
+          (exit 1))
+         (else
+          (for-each
+           (lambda (pair)
+             (let ((test-name (car pair))
+                   (spec (cdr pair)))
+               (run-test test-name spec run-id
+                         temp-path data-path project-path
+	                 #:use-network? use-network?
+                         #:verify-only? (not (not verify-run-id)))))
+           test-specs))))))))
