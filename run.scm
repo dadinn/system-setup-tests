@@ -428,13 +428,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	   ((matcher "step04" "\\$ ")
             (format expect-port "sudo -i\n")))
 	  (expect
-	   ((matcher "step05" "# ")
+	   ((matcher "step05")
 	    (format expect-port "export LC_ALL=C\n")))
 	  (expect
-	   ((matcher "step06" "# ")
+	   ((matcher "step06")
 	    (format expect-port "mkdir /mnt/sources\n")))
 	  (expect
-	   ((matcher "step07" "# ")
+	   ((matcher "step07")
             (format expect-port
              "mount -t 9p -o ~A sources /mnt/sources\n"
              (utils:emit-arg-alist
@@ -443,10 +443,10 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		"ro")))))
 	    (when (not use-network?)
 	     (expect
-	      ((matcher "step08" "# ")
+	      ((matcher "step08")
 	       (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
 	     (expect
-	      ((matcher "step09" "# ")
+	      ((matcher "step09")
                (format expect-port
                 "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
                 (utils:emit-arg-alist
@@ -454,40 +454,40 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 		   ("msize" . "104857600")
 		   "ro")))))
 	     (expect
-	      ((matcher "step10" "# ")
+	      ((matcher "step10")
 	       (format expect-port "if [ -e /etc/apt/sources.list.d/base.list ]; then echo updating /etc/apt/sources.list; mv /etc/apt/sources.list.d/base.list /etc/apt/sources.list; fi\n")))
 	     (expect
-	      ((matcher "step11" "# ")
+	      ((matcher "step11")
 	       (format expect-port "sed -i -E 's;^deb ([^ ]+) ([^ ]+) main.*$;deb file:///var/spool/apt-mirror/mirror/deb.debian.org/debian/ \\2 main;g' /etc/apt/sources.list\n"))))
 	    (expect
-	     ((matcher "step12" "# ")
+	     ((matcher "step12")
 	      (format expect-port "apt update\n")))
 	    (expect
-	     ((matcher "step13" "# ")
+	     ((matcher "step13")
 	      (format expect-port "apt install -y ~A"
 	       (utils:assoc-get guest-guile-package
 		(utils:assoc-get spec "guest" "os")
 		(utils:assoc-get spec "guest" "release")))
 	      (newline expect-port)))
 	    (expect
-	     ((matcher "step14" "# ")
+	     ((matcher "step14")
 	      (call-init-zpool expect-port spec)))
 	    (expect
-	     ((matcher "step15" "# ")
+	     ((matcher "step15")
 	      (call-init-instroot expect-port spec)))
 	    (when (not use-network?)
 	      (expect
-	       ((matcher "step16" "# ")
+	       ((matcher "step16")
 		(format expect-port "apt install -y nginx\n")))
 	      (expect
-	       ((matcher "step17"  "# ")
+	       ((matcher "step17")
 		(format expect-port "cp /mnt/sources/tests/resources/nginx/apt-mirror.conf /etc/nginx/conf.d/\n")))
 	      (expect
-	       ((matcher "step18" "# ")
+	       ((matcher "step18")
 		(format expect-port "systemctl restart nginx\n")
 		(sleep 10))))
 	    (expect
-	     ((matcher "step19" "# ")
+	     ((matcher "step19")
 	      (call-debian-setup expect-port spec use-network?)))
 	    (expect
 	     ((matcher "step20" "FINISHED INSTALLING NEW DEBIAN SYSTEM!")
@@ -628,13 +628,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
                ((matcher "step04" "\\$ ")
                 (format expect-port "sudo -i\n")))
               (expect
-               ((matcher "step05" "# ")
+               ((matcher "step05")
                 (format expect-port "export LC_ALL=C\n")))
               (expect
-               ((matcher "step06" "# ")
+               ((matcher "step06")
                 (format expect-port "mkdir /mnt/sources\n")))
               (expect
-               ((matcher "step07" "# ")
+               ((matcher "step07")
                 (format expect-port
                  "mount -t 9p -o ~A sources /mnt/sources\n"
                  (utils:emit-arg-alist
@@ -642,29 +642,29 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
                     ("msize" . "104857600")
                     "ro")))))
               (expect
-               ((matcher "step08" "# ")
+               ((matcher "step08")
                 (format expect-port "mkdir -p /var/spool/apt-mirror\n")))
               (expect
-               ((matcher "step09" "# ")
+               ((matcher "step09")
                 (format expect-port
                  "mount -t 9p -o ~A mirrors /var/spool/apt-mirror\n"
                  (utils:emit-arg-alist
                   '(("trans" . "virtio")
                     ("msize" . "104857600"))))))
               (expect
-               ((matcher "step10" "# ")
+               ((matcher "step10")
                 (format expect-port "apt update\n")))
               (expect
-               ((matcher "step11" "# ")
+               ((matcher "step11")
                 (format expect-port "apt install -y apt-mirror\n")))
               (expect
-               ((matcher "step12" "# ")
+               ((matcher "step12")
                 (format expect-port "cp /mnt/sources/tests/resources/apt/mirror.list /etc/apt/\n")))
               (expect
-               ((matcher "step13" "# ")
+               ((matcher "step13")
                 (format expect-port "apt-mirror\n")))
               (expect
-               ((matcher "step14" "# ")
+               ((matcher "step14")
                 (format #t "\nFinished synchronising apt-mirror!\n"))))
             (lambda ()
               (kill (fetch-pid expect-port) SIGTERM)
