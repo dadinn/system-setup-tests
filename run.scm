@@ -193,11 +193,14 @@ Quiting interactive mode is done by typing the `quit' command."
      (description
       "This usage help..."))))
 
-(define (init-matcher log-path)
+(define (init-matcher log-path default-pattern)
  (when (not (file-exists? log-path))
   (utils:mkdir-p log-path))
- (lambda* (id pattern #:rest args)
-   (let* ((pattern (apply format #f pattern args))
+ (lambda* (id #:rest args)
+   (let* ((pattern
+           (apply format #f
+            (if (null? args) default-pattern (car args))
+            (if (null? args) '() (cdr args))))
 	  (pattern-length (string-length pattern))
 	  (log-file (utils:path log-path (string-append id ".log")))
 	  (log-port (open-output-file log-file)))
@@ -364,7 +367,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	  (lambda (c)
 	    (display c log-port)
 	    (display c)))
-	 (matcher (init-matcher (utils:path logs-path "expect")))
+	 (matcher (init-matcher (utils:path logs-path "expect") ":~~# "))
 	 (drives-path (utils:path test-path "drives"))
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
 	 (live-username (utils:assoc-get spec "guest" "username"))
@@ -590,7 +593,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
           (lambda (c)
             (display c log-port)
             (display c)))
-         (matcher (init-matcher (utils:path logs-path "expect")))
+         (matcher (init-matcher (utils:path logs-path "expect") ":~~# "))
          (live-username (utils:assoc-get guest-spec "username"))
          (live-password (utils:assoc-get guest-spec "password")))
     (dynamic-wind
