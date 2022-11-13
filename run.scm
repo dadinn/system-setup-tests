@@ -144,6 +144,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		"-virtfs"
 		(utils:emit-arg-alist
 		 `("local"
+                   ,@(if (not network?) '("readonly") '())
 		   ("path" . ,mirrors-path)
 		   ("mount_tag" . "mirrors")
 		   ("security_model" . "mapped"))))
