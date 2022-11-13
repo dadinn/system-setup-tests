@@ -590,6 +590,14 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (test-path (utils:path run-path name))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
+         (expect-port
+          (run-qemu
+           #:name name
+           #:memory "1024"
+           #:network? #t
+           #:cdrom-path cdrom-path
+           #:mirrors-path mirror-path
+           #:sources-path sources-path))
          (expect-char-proc
           (lambda (c)
             (display c log-port)
@@ -597,22 +605,11 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (matcher (init-matcher (utils:path logs-path "expect") ":~~# "))
          (live-username (utils:assoc-get guest-spec "username"))
          (live-password (utils:assoc-get guest-spec "password")))
+    (when (not (utils:directory? mirror-path))
+      (utils:mkdir-p mirror-path))
     (dynamic-wind
       (const #t)
       (lambda ()
-        (when (not (utils:directory? mirror-path))
-          (utils:mkdir-p mirror-path))
-        (let* ((expect-port
-                (run-qemu
-                 #:name name
-                 #:memory "1024"
-                 #:network? #t
-                 #:cdrom-path cdrom-path
-                 #:mirrors-path mirror-path
-                 #:sources-path sources-path)))
-          (dynamic-wind
-            (const #t)
-            (lambda ()
               (expect
                ((matcher "step01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
                 (sleep 1)
@@ -667,14 +664,14 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
               (expect
                ((matcher "step14")
                 (format #t "\nFinished synchronising apt-mirror!\n"))))
-            (lambda ()
-              (kill (fetch-pid expect-port) SIGTERM)
-              (popen:close-pipe expect-port)
-              (format #t "\nTerminated QEMU process test ~A, run ~A!\n" name run-id)
-              (format #t "Updating read permissions for ~A..." mirror-path)
-              (system (format #f "find ~A -exec chmod a+r" mirror-path))
-              (format #t "Updated read permissions for ~A!" mirror-path)))))
-      (lambda () (close-port log-port)))))
+      (lambda ()
+        (kill (fetch-pid expect-port) SIGTERM)
+        (popen:close-pipe expect-port)
+        (close-port log-port)
+        (format #t "\nTerminated QEMU process test ~A, run ~A!\n" name run-id)
+        (format #t "Updating read permissions for ~A..." mirror-path)
+        (system (format #f "find ~A -exec chmod a+r" mirror-path))
+        (format #t "Updated read permissions for ~A!" mirror-path)))))
 
 (define (find-test-names specs-path)
   (let ((pattern "([a-zA-Z_-]+).scm$"))
