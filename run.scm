@@ -406,19 +406,22 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (dynamic-wind
 	(const #t)
 	(lambda ()
-	  (cond
-	   (uefi?
-	    ;; Generate Live CDs (at least for Debian) which can boot in UEFI from serial console.
-	    ;; Maybe something along these lines:
-	    ;; https://p5r.uk/blog/2020/instaling-debian-over-serial-console.html
-	    (error "Booting does not work from Live CD when using UEFI!!!"))
-	   (else
-	    (expect
-	     ((matcher "step01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
-	      (sleep 1)
-              (format expect-port "\t")
-	      (sleep 1)
-              (format expect-port " console=ttyS0\n")))))
+	  (if uefi?
+           (expect
+            ((matcher "step01" "Welcome to GRUB!")
+             (sleep 1)
+             (format expect-port "e")
+             (format expect-port "\x1b[B") ;; down key
+             (format expect-port "\x1b[B") ;; down key
+             (format expect-port "\x1b[F") ;; END key
+             (format expect-port " console=ttyS0")
+             (format expect-port "\x18"))) ;; Ctrl-X key
+	   (expect
+	    ((matcher "step01" "\"Booting .* Installer with Speech Synthesis\\.\\.\\.\"")
+	     (sleep 1)
+             (format expect-port "\t")
+	     (sleep 1)
+             (format expect-port " console=ttyS0\n"))))
 	  (expect
 	   ((matcher "step02" "debian login:")
             (format expect-port "~A\n" live-username)))
