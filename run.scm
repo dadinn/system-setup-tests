@@ -15,6 +15,7 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 readline) #:select (readline))
  ((ice-9 format) #:select (format))
  ((ice-9 ftw) #:select (scandir))
+ ((ice-9 threads) #:select (par-for-each))
  ((ice-9 expect)
   #:select
   ((expect . expect-old)
@@ -190,6 +191,9 @@ Quiting interactive mode is done by typing the `quit' command."
      (value #t)
      (value-arg "path")
      (default "/usr/share/OVMF/OVMF_VARS.fd"))
+    (parallel
+     (single-char #\P)
+     (description "Execute multiple tests in parallel in separate VMs. Only prints output into log files."))
     (verify
      (single-char #\V)
      (description "Run verification process only on existing test results for specific run (by RUNID timestamp).")
@@ -356,7 +360,7 @@ Quiting interactive mode is done by typing the `quit' command."
 
 (define* (run-test
           name spec run-id temp-path data-path sources-path
-          #:key ovmf-code-file ovmf-vars-file use-network? verify-only?)
+          #:key ovmf-code-file ovmf-vars-file use-network? parallel? verify-only?)
   (let* ((use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
 	 (uefi? (utils:assoc-get spec "guest" "uefi"))
 	 (run-path (utils:path temp-path run-id))
@@ -373,9 +377,11 @@ Quiting interactive mode is done by typing the `quit' command."
 	 (logs-path (utils:path test-path "logs"))
 	 (log-port (open-log-port logs-path "output.log"))
 	 (expect-char-proc
-	  (lambda (c)
-	    (display c log-port)
-	    (display c)))
+          (if (not parallel?)
+	   (lambda (c)
+	     (display c log-port)
+	     (display c))
+           (lambda (c) (display c log-port))))
 	 (matcher (init-matcher (utils:path logs-path "expect") ":~~# "))
 	 (drives-path (utils:path test-path "drives"))
 	 (drive-specs (utils:assoc-get spec "guest" "drives"))
@@ -738,7 +744,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (ovmf-code-file (hash-ref options 'ovmf-code-file))
          (ovmf-vars-file (hash-ref options 'ovmf-vars-file))
 	 (test-names (hash-ref options '()))
-	 (help? (hash-ref options 'help)))
+         (parallel? (hash-ref options 'parallel))
+         (help? (hash-ref options 'help)))
     (unless (utils:directory? data-path)
       (utils:mkdir-p data-path))
     (unless (utils:directory? temp-path)
@@ -790,14 +797,17 @@ Valid OPTION value are:
            test-specs)
           (exit 1))
          (else
-          (for-each
-           (lambda (pair)
-             (let ((test-name (car pair))
-                   (spec (cdr pair)))
-               (run-test test-name spec run-id
-                         temp-path data-path project-path
-                         #:ovmf-code-file ovmf-code-file
-                         #:ovmf-vars-file ovmf-vars-file
-	                 #:use-network? use-network?
-                         #:verify-only? (not (not verify-run-id)))))
-           test-specs))))))))
+          (let ((test-runner
+                 (lambda (pair)
+                   (let ((test-name (car pair))
+                         (spec (cdr pair)))
+                     (run-test test-name spec run-id
+                      temp-path data-path project-path
+                      #:ovmf-code-file ovmf-code-file
+                      #:ovmf-vars-file ovmf-vars-file
+                      #:use-network? use-network?
+                      #:parallel? parallel?
+                      #:verify-only? (not (not verify-run-id)))))))
+            (if parallel?
+                (par-for-each test-runner test-specs)
+                (for-each test-runner test-specs))))))))))
