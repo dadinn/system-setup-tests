@@ -82,14 +82,9 @@ Quiting interactive mode is done by typing the `quit' command."
    ((@@ (ice-9 popen) fetch-pipe-info) pipe)))
 
 (define* (run-qemu
-	  #:key name memory network? sources-path mirrors-path cdrom-path drives-path (drive-specs '()) uefi?
-	  (ovmf-code-file "/usr/share/OVMF/OVMF_CODE.fd")
-	  (ovmf-vars-file "/usr/share/OVMF/OVMF_VARS.fd"))
-  (when uefi?
-    (cond
-     ((file-exists? ovmf-vars-file)
-      (copy-file ovmf-vars-file (utils:path drives-path (basename ovmf-vars-file))))
-     (else (error "OVMF_VARS file doesn't exist!" ovmf-vars-file))))
+          #:key name memory network? uefi? ovmf-code-file
+          sources-path mirrors-path cdrom-path drives-path
+          (drive-specs '()))
   (let ((port
 	 (apply popen:open-pipe* OPEN_BOTH
 	  `("qemu-system-x86_64"
@@ -128,7 +123,7 @@ Quiting interactive mode is done by typing the `quit' command."
 		(utils:emit-arg-alist
 		 `(("if" . "pflash")
 		   ("format" . "raw")
-		   ("file" . ,(utils:path drives-path (basename ovmf-vars-file))))))
+		   ("file" . ,(utils:path drives-path "OVMF_VARS.fd")))))
 	       '())
 	    ,@(if sources-path
 	       (list
@@ -184,6 +179,16 @@ Quiting interactive mode is done by typing the `quit' command."
      (value-arg "path")
      (predicate utils:directory?)
      (default ,(utils:path project-path "tests" "resources" "specs")))
+    (ovmf-code-file
+     (description "Path to OVMF code file")
+     (value #t)
+     (value-arg "path")
+     (default "/usr/share/OVMF/OVMF_CODE.fd"))
+    (ovmf-vars-file
+     (description "Path to OVMF vars file")
+     (value #t)
+     (value-arg "path")
+     (default "/usr/share/OVMF/OVMF_VARS.fd"))
     (verify
      (single-char #\V)
      (description "Run verification process only on existing test results for specific run (by RUNID timestamp).")
@@ -348,8 +353,10 @@ Quiting interactive mode is done by typing the `quit' command."
   (setvbuf log-port 'none)
   log-port))
 
-(define* (run-test name spec run-id temp-path data-path sources-path #:key use-network? verify-only?)
-  (let* ((use-network? (or use-network? (assoc-get spec "guest" "network")))
+(define* (run-test
+          name spec run-id temp-path data-path sources-path
+          #:key ovmf-code-file ovmf-vars-file use-network? verify-only?)
+  (let* ((use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
 	 (uefi? (utils:assoc-get spec "guest" "uefi"))
 	 (run-path (utils:path temp-path run-id))
 	 (mirror-path
@@ -392,12 +399,16 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	 (when (not (file-exists? path))
 	   (system* "qemu-img" "create" "-f" "qcow2" path size))))
      drive-specs)
+    (cond
+     ((and uefi? (file-exists? ovmf-vars-file))
+      (copy-file ovmf-vars-file (utils:path drives-path "OVMF_VARS.fd")))
+     (uefi? (error "OVMF_VARS file doesn't exist!" ovmf-vars-file)))
     (let* ((expect-port
 	    (run-qemu
 	     #:name name
 	     #:memory "4096"
-	     #:network? use-network?
-	     #:uefi? uefi?
+	     #:network? use-network? #:uefi? uefi?
+             #:ovmf-code-file ovmf-code-file
 	     #:sources-path sources-path
 	     #:mirrors-path mirror-path
 	     #:cdrom-path cdrom-path
@@ -508,6 +519,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 	       #:name (string-append name "_verify")
 	       #:memory "4096"
 	       #:network? #f
+               #:uefi? uefi?
+               #:ovmf-code-file ovmf-code-file
 	       #:drives-path drives-path
 	       #:drive-specs drive-specs))
 	     (matcher (init-matcher logs-path))
@@ -721,6 +734,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (alias-names (cddr alias-names))
 	 (mirror-type (hash-ref options 'sync-mirror))
 	 (use-network? (hash-ref options 'use-network))
+         (ovmf-code-file (hash-ref options 'ovmf-code-file))
+         (ovmf-vars-file (hash-ref options 'ovmf-vars-file))
 	 (test-names (hash-ref options '()))
 	 (help? (hash-ref options 'help)))
     (unless (utils:directory? data-path)
@@ -780,6 +795,8 @@ Valid OPTION value are:
                    (spec (cdr pair)))
                (run-test test-name spec run-id
                          temp-path data-path project-path
+                         #:ovmf-code-file ovmf-code-file
+                         #:ovmf-vars-file ovmf-vars-file
 	                 #:use-network? use-network?
                          #:verify-only? (not (not verify-run-id)))))
            test-specs))))))))
