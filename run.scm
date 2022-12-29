@@ -146,6 +146,7 @@ Quiting interactive mode is done by typing the `quit' command."
 	       '())))))
     (setvbuf port 'none)
     (set-port-encoding! port "UTF-8")
+    (set-port-conversion-strategy! port 'substitute)
     port))
 
 (define (options-spec project-path)
