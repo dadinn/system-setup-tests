@@ -15,7 +15,8 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 readline) #:select (readline))
  ((ice-9 format) #:select (format))
  ((ice-9 ftw) #:select (scandir))
- ((ice-9 threads) #:select (par-for-each))
+ ((ice-9 threads) #:select
+  (par-for-each call-with-new-thread thread-exited?))
  ((ice-9 expect)
   #:select
   ((expect . expect-old)
@@ -33,47 +34,36 @@ exec guile -e main -s "$0" "$@"
   `(if #f #f))
 
 (define-macro (interact . args)
-  "Scheme procedure: interact [expect-port] [lock-filename]
+  "Scheme procedure: interact [expect-port]
 
-Forks the current process and gives control to the user reading lines of commands
-and forwarding them to the VM process. The stdout and stderr of the VM process
-are then printed to the current standard output.
+Gives interactive control to the user by reading lines of commands and forwarding them
+to the VM process. The stdout and stderr of the VM process are then printed to the
+current standard output.
 
-Takes optional arguments `expect-port' and `lock-filename'.
+Takes optional arguments `expect-port'. This should be an input-output pipe to communicate
+with the current process. By default it expect `expect-port' binding to be defined in the
+current lexical context.
 
-The `expect-port' should be an input-output pipe to communicate with the current process.
-By default it expect `expect-port' binding to be defined in the current lexical context.
-The `lock-filename' is used to create a temporary empty file (by default `interact.LCK')
-to signal to the current process when the user has decided to exit the interactive mode.
-This temporary file is removed afterwards.
-
-Quiting interactive mode is done by typing the `quit' command."
-  (let ((expect-port (or (and (pair? args) (car args)) 'expect-port))
-        (lock-filename (or (and (pair? args) (cadr args)) "interact.LCK")))
-    `(let ((pid (primitive-fork)))
-       (cond
-        ((zero? pid)
-         (let loop ((line (readline)))
+Quiting interactive mode is done by typing the `continue!' command."
+  (let ((expect-port (or (and (pair? args) (car args)) 'expect-port)))
+    `(let ((interaction
+            (call-with-new-thread
+             (lambda ()
+               (let loop ((line (readline)))
+                 (cond
+                  ((equal? line "continue!")
+                   (newline ,expect-port))
+                  (else
+                   (display line ,expect-port)
+                   (newline ,expect-port)
+                   (loop (readline)))))))))
+       (let loop ()
+         (expect-old
+          ((const #t)
            (cond
-            ((equal? line "quit")
-             (let ((port (open-output-file ,lock-filename)))
-               (newline port)
-               (close port))
-             (newline ,expect-port)
-             (primitive-exit 0))
-            (else
-             (display line ,expect-port)
-             (newline ,expect-port)
-             (loop (readline))))))
-        (else
-         (let loop ()
-           (expect-old
-            ((const #t)
-             (cond
-              ((file-exists? ,lock-filename)
-               (delete-file ,lock-filename))
-              (else (loop))))))
-         (waitpid pid))))))
+            ((thread-exited? interaction)
+             (format #t "\nCONTINUING...\n"))
+            (else (loop)))))))))
 
 (define (printable-char? c)
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
