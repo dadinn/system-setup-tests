@@ -69,9 +69,31 @@ To exit the interactive mode enter \"continue!\" as command."
    ((@@ (ice-9 popen) fetch-pipe-info) pipe)))
 
 (define* (run-qemu
-          #:key name memory network? uefi? ovmf-code-file
+          #:key name memory network? uefi?
+          ovmf-code-file ovmf-vars-file
           sources-path mirrors-path cdrom-path drives-path
           (drive-specs '()))
+  (when (not (utils:directory? drives-path))
+    (utils:mkdir-p drives-path))
+  (for-each
+   (lambda (drive-spec)
+     (let* ((filename (assoc-ref drive-spec "name"))
+            (filename (string-append filename ".img"))
+            (path (utils:path drives-path filename))
+            (size (assoc-ref drive-spec "size")))
+       (when (not (file-exists? path))
+         (system* "qemu-img" "create" "-f" "qcow2" path size))))
+   drive-specs)
+  (cond
+   ((and uefi? ovmf-vars-file (file-exists? ovmf-vars-file))
+    (let ((target-file (utils:path drives-path "OVMF_VARS.fd")))
+      (unless (file-exists? target-file)
+        (copy-file ovmf-vars-file target-file))))
+   ((and uefi? ovmf-vars-file)
+    (error "OVMF_VARS file doesn't exist!" ovmf-vars-file))
+   ((and uefi? (not ovmf-vars-file))
+    (error "OVMF_VARS file must be specified for UEFI support!"))
+   (uefi? (error "OVMF_VARS file doesn't exist!" ovmf-vars-file)))
   (let ((port
          (apply popen:open-pipe* OPEN_BOTH
           `("qemu-system-x86_64"
@@ -382,33 +404,13 @@ To exit the interactive mode enter \"continue!\" as command."
       (when (not (or use-network? (utils:directory? mirror-path)))
         (error "Not using network, yet local mirror directory doesn't exist!.
 Either run with networking enabled, or synchronise apt-mirror first!"))
-    (when (not (utils:directory? drives-path))
-      (utils:mkdir-p drives-path))
-    (for-each
-     (lambda (drive-spec)
-       (let* ((filename (assoc-ref drive-spec "name"))
-              (filename (string-append filename ".img"))
-              (path (utils:path drives-path filename))
-              (size (assoc-ref drive-spec "size")))
-         (when (not (file-exists? path))
-           (system* "qemu-img" "create" "-f" "qcow2" path size))))
-     drive-specs)
-    (cond
-     ((and uefi? ovmf-vars-file (file-exists? ovmf-vars-file))
-      (let ((target-file (utils:path drives-path "OVMF_VARS.fd")))
-        (unless (file-exists? target-file)
-          (copy-file ovmf-vars-file target-file))))
-     ((and uefi? ovmf-vars-file)
-      (error "OVMF_VARS file doesn't exist!" ovmf-vars-file))
-     ((and uefi? (not ovmf-vars-file))
-      (error "OVMF_VARS file must be specified for UEFI support!"))
-     (uefi? (error "OVMF_VARS file doesn't exist!" ovmf-vars-file)))
     (let* ((expect-port
             (run-qemu
              #:name name
              #:memory "4096"
              #:network? use-network? #:uefi? uefi?
              #:ovmf-code-file ovmf-code-file
+             #:ovmf-vars-file ovmf-vars-file
              #:sources-path sources-path
              #:mirrors-path mirror-path
              #:cdrom-path cdrom-path
@@ -520,6 +522,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
                #:memory "4096"
                #:network? #f
                #:uefi? uefi?
+               #:ovmf-code-file ovmf-code-file
+               #:ovmf-vars-file ovmf-vars-file
                #:drives-path drives-path
                #:drive-specs drive-specs))
              (passphrase (utils:assoc-get spec "instroot" "passphrase"))
