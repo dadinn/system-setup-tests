@@ -393,8 +393,14 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
            (system* "qemu-img" "create" "-f" "qcow2" path size))))
      drive-specs)
     (cond
-     ((and uefi? (file-exists? ovmf-vars-file))
-      (copy-file ovmf-vars-file (utils:path drives-path "OVMF_VARS.fd")))
+     ((and uefi? ovmf-vars-file (file-exists? ovmf-vars-file))
+      (let ((target-file (utils:path drives-path "OVMF_VARS.fd")))
+        (unless (file-exists? target-file)
+          (copy-file ovmf-vars-file target-file))))
+     ((and uefi? ovmf-vars-file)
+      (error "OVMF_VARS file doesn't exist!" ovmf-vars-file))
+     ((and uefi? (not ovmf-vars-file))
+      (error "OVMF_VARS file must be specified for UEFI support!"))
      (uefi? (error "OVMF_VARS file doesn't exist!" ovmf-vars-file)))
     (let* ((expect-port
             (run-qemu
