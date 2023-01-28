@@ -68,22 +68,23 @@ To exit the interactive mode enter \"continue!\" as command."
   ((@@ (ice-9 popen) pipe-info-pid)
    ((@@ (ice-9 popen) fetch-pipe-info) pipe)))
 
-(define* (run-qemu
-          #:key name memory network? uefi?
+(define* (run-qemu name
+          #:key memory network? uefi?
           ovmf-code-file ovmf-vars-file
-          sources-path mirrors-path cdrom-path drives-path
-          (drive-specs '()))
+          sources-path mirrors-path
+          cdrom-path drives-path
+          drive-specs)
   (when (not (utils:directory? drives-path))
     (utils:mkdir-p drives-path))
   (for-each
-   (lambda (drive-spec)
-     (let* ((filename (assoc-ref drive-spec "name"))
+   (lambda (spec)
+     (let* ((filename (assoc-ref spec "name"))
             (filename (string-append filename ".img"))
             (path (utils:path drives-path filename))
-            (size (assoc-ref drive-spec "size")))
+            (size (assoc-ref spec "size")))
        (when (not (file-exists? path))
          (system* "qemu-img" "create" "-f" "qcow2" path size))))
-   drive-specs)
+   (or drive-specs '()))
   (cond
    ((and uefi? ovmf-vars-file (file-exists? ovmf-vars-file))
     (let ((target-file (utils:path drives-path "OVMF_VARS.fd")))
@@ -405,15 +406,14 @@ To exit the interactive mode enter \"continue!\" as command."
         (error "Not using network, yet local mirror directory doesn't exist!.
 Either run with networking enabled, or synchronise apt-mirror first!"))
     (let* ((expect-port
-            (run-qemu
-             #:name name
+            (run-qemu name
              #:memory "4096"
              #:network? use-network? #:uefi? uefi?
              #:ovmf-code-file ovmf-code-file
              #:ovmf-vars-file ovmf-vars-file
+             #:cdrom-path cdrom-path
              #:sources-path sources-path
              #:mirrors-path mirror-path
-             #:cdrom-path cdrom-path
              #:drives-path drives-path
              #:drive-specs drive-specs)))
       (dynamic-wind
@@ -517,11 +517,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
     ;; VERIFY RUN
       (format #t "\nVerifying results for ~A\n" name)
       (let* ((expect-port
-              (run-qemu
-               #:name (string-append name "_verify")
-               #:memory "4096"
-               #:network? #f
-               #:uefi? uefi?
+              (run-qemu name
+               #:network? #f #:uefi? uefi?
                #:ovmf-code-file ovmf-code-file
                #:ovmf-vars-file ovmf-vars-file
                #:drives-path drives-path
@@ -609,8 +606,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
          (expect-port
-          (run-qemu
-           #:name name
+          (run-qemu name
            #:memory "1024"
            #:network? #t
            #:cdrom-path cdrom-path
