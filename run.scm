@@ -569,7 +569,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
               (newline expect-port)))
             (expect
              ((matcher "verify08" "root@~A:~~# " hostname)
-              (format expect-port "swapon -s\n")
+              (format expect-port "swapon --output-all\n")
               (newline expect-port)))
             (when zpool
               (expect
