@@ -332,6 +332,7 @@ To exit the interactive mode enter \"continue!\" as command."
   '(("apt" .
      (("os" . "debian")
       ("release" . "bullseye")
+      ("memory" . "1024")
       ("username" . "user")
       ("password" . "live")))))
 
@@ -372,6 +373,7 @@ To exit the interactive mode enter \"continue!\" as command."
           name spec run-id temp-path data-path sources-path
           #:key ovmf-code-file ovmf-vars-file use-network? parallel? verify-only?)
   (let* ((use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
+         (memory (utils:assoc-get spec "guest" "memory"))
          (uefi? (utils:assoc-get spec "guest" "uefi"))
          (run-path (utils:path temp-path run-id))
          (mirror-path
@@ -407,7 +409,7 @@ To exit the interactive mode enter \"continue!\" as command."
 Either run with networking enabled, or synchronise apt-mirror first!"))
     (let* ((expect-port
             (run-qemu name
-             #:memory "4096"
+             #:memory memory
              #:network? use-network? #:uefi? uefi?
              #:ovmf-code-file ovmf-code-file
              #:ovmf-vars-file ovmf-vars-file
@@ -518,6 +520,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (format #t "\nVerifying results for ~A\n" name)
       (let* ((expect-port
               (run-qemu name
+               #:memory memory
                #:network? #f #:uefi? uefi?
                #:ovmf-code-file ovmf-code-file
                #:ovmf-vars-file ovmf-vars-file
@@ -598,6 +601,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
   (let* ((name "mirror-sync")
          (os (utils:assoc-get guest-spec "os"))
          (release (utils:assoc-get guest-spec "release"))
+         (memory (utils:assoc-get guest-spec "memory"))
          (run-path (utils:path temp-path run-id))
          (mirror-path
           (utils:path
@@ -610,7 +614,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
          (log-port (open-log-port logs-path "output.log"))
          (expect-port
           (run-qemu name
-           #:memory "1024"
+           #:memory memory
            #:network? #t
            #:cdrom-path cdrom-path
            #:mirrors-path mirror-path
