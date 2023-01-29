@@ -579,10 +579,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
                ((matcher "verify10" "root@~A:~~# " hostname)
                 (format expect-port "zfs list -t all\n"))))
             (expect
-             ((matcher "verify11" "root@~A:~~# " hostname)
+               ((matcher "verify11" "root@~A:~~# " hostname)
+                (format expect-port "uname -r\n")))
+            (expect
+             ((matcher "verify12" "root@~A:~~# " hostname)
               (format expect-port "systemctl poweroff\n")))
             (expect
-             ((matcher "verify12" "reboot: Power down")
+             ((matcher "verify13" "reboot: Power down")
               (sleep 5))))
           (lambda ()
             (kill (fetch-pid expect-port) SIGTERM)
