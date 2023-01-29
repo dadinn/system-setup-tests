@@ -33,37 +33,33 @@ exec guile -e main -s "$0" "$@"
 (define-macro (comment . args)
   `(if #f #f))
 
-(define-macro (interact . args)
-  "Scheme procedure: interact [expect-port]
+(define-macro (interact port)
+  "Scheme procedure: interact PORT
 
 Gives interactive control to the user by reading lines of commands and forwarding them
-to the VM process. The stdout and stderr of the VM process are then printed to the
-current standard output.
+to the VM process. The serial output of the VM process are then printed to the current
+standard output. PORT argument has to be an input-output pipe to communicate with the
+current process.
 
-Takes optional arguments `expect-port'. This should be an input-output pipe to communicate
-with the current process. By default it expect `expect-port' binding to be defined in the
-current lexical context.
-
-Quiting interactive mode is done by typing the `continue!' command."
-  (let ((expect-port (or (and (pair? args) (car args)) 'expect-port)))
-    `(let ((interaction
-            (call-with-new-thread
-             (lambda ()
-               (let loop ((line (readline)))
-                 (cond
-                  ((equal? line "continue!")
-                   (newline ,expect-port))
-                  (else
-                   (display line ,expect-port)
-                   (newline ,expect-port)
-                   (loop (readline)))))))))
-       (let loop ()
-         (expect-old
-          ((const #t)
-           (cond
-            ((thread-exited? interaction)
-             (format #t "\nCONTINUING...\n"))
-            (else (loop)))))))))
+To exit the interactive mode enter \"continue!\" as command."
+  `(let ((interaction
+          (call-with-new-thread
+           (lambda ()
+             (let loop ((line (readline)))
+               (cond
+                ((equal? line "continue!")
+                 (newline ,port))
+                (else
+                 (display line ,port)
+                 (newline ,port)
+                 (loop (readline)))))))))
+     (let loop ()
+       (expect-old
+        ((const #t)
+         (cond
+          ((thread-exited? interaction)
+           (format #t "\nCONTINUING...\n"))
+          (else (loop))))))))
 
 (define (printable-char? c)
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
