@@ -17,9 +17,12 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 ftw) #:select (scandir))
  ((ice-9 threads) #:select
   (par-for-each call-with-new-thread thread-exited?))
+ ((ice-9 exceptions))
  ((ice-9 expect)
   #:select
   ((expect . expect-old)
+   expect-strings expect-regexec
+   expect-strings-compile-flags
    expect-timeout expect-timeout-proc
    expect-select expect-eof-proc)))
 
@@ -60,6 +63,17 @@ To exit the interactive mode enter \"continue!\" as command."
           ((thread-exited? interaction)
            (format #t "\nCONTINUING...\n"))
           (else (loop))))))))
+
+(define-syntax prompt
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ message invalid-message (pattern body ...) ...)
+       #'(let loop ((resp (readline message)))
+           (cond
+            ((regex:string-match pattern resp)
+             body ...)
+            ...
+            (else (loop (readline invalid-message)))))))))
 
 (define (printable-char? c)
   (or (eqv? c #\newline) (not (eqv? 'Cc (char-general-category c)))))
@@ -339,28 +353,104 @@ To exit the interactive mode enter \"continue!\" as command."
 (define live-iso-specs
   '(("debian" .
      (("stretch" .
-       (("filename" . "debian-live-9.2.0-amd64-gnome.iso")))
+       (("http"
+         (("filename" . "debian-live-9.2.0-amd64-gnome.iso")))))
       ("buster" .
-       (("torrent" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-        ("filename" . "debian-live-10.3.0-amd64-standard.iso")))
+       (("torrent" .
+         (("filename" . "debian-live-10.3.0-amd64-standard.iso")
+          ("url" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")))))
       ("bullseye" .
-       (("torrent" . "magnet:?xt=urn:btih:e5f75ea3ff72e4aea39caecd870e8e43a9ed14b5&dn=debian-live-11.2.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")
-        ("filename" . "debian-live-11.2.0-amd64-standard.iso")))
-      ("archlinux" .
-       (("2020.01.01" .
-         (("curl" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")
-          ("filename" ."archlinux-2020.01.01-x86_64.iso")))))))))
+       (("http" .
+         (("filename" . "debian-live-11.6.0-amd64-standard.iso")
+          ("url" . "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-11.6.0-amd64-standard.iso")))
+        ("torrent" .
+         (("filename" . "debian-live-11.6.0-amd64-standard.iso")
+          ("url" . "magnet:?xt=urn:btih:4365ce1cbb930a7c018e70073fdb2877bd4da852&dn=debian-live-11.6.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")))))))
+    ("archlinux" .
+     (("2020.01.01" .
+       (("http" .
+         (("filename" ."archlinux-2020.01.01-x86_64.iso")
+          ("url" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")))))))))
 
-(define (resolve-iso-path data-path os release)
+(define (download-http iso-dir filename url)
+  (cond
+   ((not (utils:which* "curl"))
+    (format #t "\nCould not find executable curl on PATH to download Live ISO image:\n~A\n\n" url)
+    #f)
+   (else
+    (format #t "\nDownloading Live ISO image over HTTP...\n\n")
+    (guard (ex (else (format #t "\n\nFailed to download Live ISO image over HTTP:\n~A\n\n" url) #f))
+      (cond
+       ((zero? (system* "curl" "--fail" "--location" "--output" (utils:path iso-dir filename) url))
+        (format #t "\nDownloaded Live ISO image: ~A\n" (utils:path iso-dir filename))
+        (utils:path iso-dir filename))
+       (else (error "Failed to Download Live ISO image!")))))))
+
+(define (download-torrent iso-dir filename url)
+  (cond
+   ((not (utils:which* "transmission-cli"))
+    (format #t "\nCould not find transmission-cli executable on PATH to download Live ISO image:\n~A\n\n" url)
+    #f)
+   (else
+    (format #t "\nDownloading Live ISO image using BitTorrent Magnet link...\n\n")
+    (guard (ex (else (format #t "\n\nFailed to download Live ISO image over BitTorrent:\n~A\n\n" url) #f))
+      (let ((expect-port (popen:open-pipe* OPEN_BOTH "transmission-cli" "--download-dir" iso-dir url))
+            (expect-char-proc display))
+        (set-port-conversion-strategy! expect-port 'substitute)
+        (set-port-encoding! expect-port "UTF-8")
+        (setvbuf expect-port 'none)
+        (dynamic-wind
+          (const #t)
+          (lambda ()
+            (expect-strings
+             ("Seeding, "
+              (sleep 3)
+              (format #t "\nDownloaded Live ISO image: ~A\n" (utils:path iso-dir filename))
+              (utils:path iso-dir filename))))
+          (lambda ()
+            (kill (fetch-pid expect-port) SIGTERM)
+            (popen:close-pipe expect-port))))))))
+
+(define (find-iso-path download? iso-dir spec)
+  (srfi1:any
+   (lambda (pair)
+     (let ((type (car pair))
+           (args (cdr pair)))
+       (cond
+        ((equal? type "http")
+         (let* ((filename (assoc-ref args "filename"))
+                (iso-path (utils:path iso-dir filename))
+                (url (assoc-ref args "url")))
+           (if (not download?)
+               (and (file-exists? iso-path) iso-path)
+               (prompt
+                "\nWould you like to download Live ISO image via HTTP request? [Y/n]:\n"
+                "\nInvalid response! Please try again [Y/n]:\n"
+                ("^[yY]?$" (download-http iso-dir filename url))
+                ("^[nN]$" #f)))))
+        ((equal? type "torrent")
+         (let* ((filename (assoc-ref args "filename"))
+                (iso-path (utils:path iso-dir filename))
+                (url (assoc-ref args "url")))
+           (if (not download?)
+               (and (file-exists? iso-path) iso-path)
+               (prompt
+                "\nWould you like to download Live ISO image via BitTorrent? [Y/n]:\n"
+                "\nInvalid response! Please try again [Y/n]:\n"
+                ("^[yY]?$" (download-torrent iso-dir filename url))
+                ("^[nN]$" #f)))))
+        (else #f))))
+   spec))
+
+(define* (resolve-iso-path data-path os release)
   (let* ((iso-dir (utils:path data-path "isos"))
-         (iso-path
-          (utils:path iso-dir
-           (utils:assoc-get live-iso-specs os release "filename"))))
-    (when (not (utils:directory? iso-dir))
-      (utils:mkdir-p iso-dir))
-    (cond
-     ((file-exists? iso-path) iso-path)
-     (else (error "Cannot find ISO image!" iso-path)))))
+         (spec
+          (utils:assoc-get
+           live-iso-specs
+           os release))
+         (iso-path (find-iso-path #f iso-dir spec)))
+    (if iso-path iso-path
+        (find-iso-path #t iso-dir spec))))
 
 (define (open-log-port logs-path filename)
  (when (not (utils:directory? logs-path))
@@ -407,6 +497,8 @@ To exit the interactive mode enter \"continue!\" as command."
       (when (not (or use-network? (utils:directory? mirror-path)))
         (error "Not using network, yet local mirror directory doesn't exist!.
 Either run with networking enabled, or synchronise apt-mirror first!"))
+      (unless cdrom-path
+        (error "Could not find Live ISO image!"))
     (let* ((expect-port
             (run-qemu name
              #:memory memory
