@@ -350,28 +350,6 @@ To exit the interactive mode enter \"continue!\" as command."
       ("username" . "user")
       ("password" . "live")))))
 
-(define live-iso-specs
-  '(("debian" .
-     (("stretch" .
-       (("http"
-         (("filename" . "debian-live-9.2.0-amd64-gnome.iso")))))
-      ("buster" .
-       (("torrent" .
-         (("filename" . "debian-live-10.3.0-amd64-standard.iso")
-          ("url" . "magnet:?xt=urn:btih:7bf9f33a7cc577b7829a4b9db8fe89dacd6eabd9&dn=debian-live-10.10.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")))))
-      ("bullseye" .
-       (("http" .
-         (("filename" . "debian-live-11.6.0-amd64-standard.iso")
-          ("url" . "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-11.6.0-amd64-standard.iso")))
-        ("torrent" .
-         (("filename" . "debian-live-11.6.0-amd64-standard.iso")
-          ("url" . "magnet:?xt=urn:btih:4365ce1cbb930a7c018e70073fdb2877bd4da852&dn=debian-live-11.6.0-amd64-standard.iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce")))))))
-    ("archlinux" .
-     (("2020.01.01" .
-       (("http" .
-         (("filename" ."archlinux-2020.01.01-x86_64.iso")
-          ("url" ."https://archive.archlinux.org/iso/2020.01.01/archlinux-2020.01.01-x86_64.iso")))))))))
-
 (define (download-http iso-dir filename url)
   (cond
    ((not (utils:which* "curl"))
@@ -442,15 +420,11 @@ To exit the interactive mode enter \"continue!\" as command."
         (else #f))))
    spec))
 
-(define* (resolve-iso-path data-path os release)
+(define* (resolve-iso-path data-path iso-specs os release)
   (let* ((iso-dir (utils:path data-path "isos"))
-         (spec
-          (utils:assoc-get
-           live-iso-specs
-           os release))
+         (spec (utils:assoc-get iso-specs os release))
          (iso-path (find-iso-path #f iso-dir spec)))
-    (if iso-path iso-path
-        (find-iso-path #t iso-dir spec))))
+    (if iso-path iso-path (find-iso-path #t iso-dir spec))))
 
 (define (open-log-port logs-path filename)
  (when (not (utils:directory? logs-path))
@@ -460,7 +434,7 @@ To exit the interactive mode enter \"continue!\" as command."
   log-port))
 
 (define* (run-test
-          name spec run-id temp-path data-path sources-path
+          run-id name spec iso-specs temp-path data-path sources-path
           #:key ovmf-code-file ovmf-vars-file use-network? parallel? verify-only?)
   (let* ((use-network? (or use-network? (utils:assoc-get spec "guest" "network")))
          (memory (utils:assoc-get spec "guest" "memory"))
@@ -474,7 +448,7 @@ To exit the interactive mode enter \"continue!\" as command."
             (utils:assoc-get spec "guest" "os"))))
          (os (utils:assoc-get spec "guest" "os"))
          (release (utils:assoc-get spec "guest" "release"))
-         (cdrom-path (resolve-iso-path data-path os release))
+         (cdrom-path (resolve-iso-path data-path iso-specs os release))
          (test-path (utils:path run-path name))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
@@ -689,7 +663,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
       (lambda ()
         (close-port log-port)))))
 
-(define* (run-mirror-sync guest-spec run-id sources-path temp-path data-path)
+(define* (run-mirror-sync run-id guest-spec iso-specs sources-path temp-path data-path)
   (let* ((name "mirror-sync")
          (os (utils:assoc-get guest-spec "os"))
          (release (utils:assoc-get guest-spec "release"))
@@ -700,7 +674,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
            data-path "mirrors"
            (assoc-ref
             os-mirror-type os)))
-         (cdrom-path (resolve-iso-path data-path os release))
+         (cdrom-path (resolve-iso-path data-path iso-specs os release))
          (test-path (utils:path run-path name))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
@@ -829,6 +803,13 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
           (scandir specs-path
            (lambda (f) (utils:directory? (utils:path specs-path f)))))
          (alias-names (cddr alias-names))
+         (iso-specs
+          (let* ((port
+                  (open-input-file
+                   (utils:path project-path "tests" "resources" "isos.scm")))
+                 (specs (read port)))
+            (close port)
+            specs))
          (mirror-type (hash-ref options 'sync-mirror))
          (use-network? (hash-ref options 'use-network))
          (ovmf-code-file (hash-ref options 'ovmf-code-file))
@@ -869,7 +850,7 @@ Valid OPTION value are:
            (string-join alias-names ",\n"))))
      (mirror-type
       (let ((spec (assoc-ref mirror-specs mirror-type)))
-        (run-mirror-sync spec run-id project-path temp-path data-path)))
+        (run-mirror-sync run-id spec iso-specs project-path temp-path data-path)))
      (else
       (let ((test-specs
              (srfi1:append-map
@@ -891,7 +872,7 @@ Valid OPTION value are:
                  (lambda (pair)
                    (let ((test-name (car pair))
                          (spec (cdr pair)))
-                     (run-test test-name spec run-id
+                     (run-test run-id test-name spec iso-specs
                       temp-path data-path project-path
                       #:ovmf-code-file ovmf-code-file
                       #:ovmf-vars-file ovmf-vars-file
