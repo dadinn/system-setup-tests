@@ -1,6 +1,6 @@
 (("guest"
   ("network" . #t)
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "buster")
   ("username" . "user")
   ("password" . "live")
@@ -21,7 +21,7 @@
   ("swapsize" . "100M")
   ("passphrase" . "password01"))
  ("install"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "buster")
   ("hostname" . "besenczy")
   ("sudouser" . "testuser")

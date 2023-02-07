@@ -339,12 +339,12 @@ To exit the interactive mode enter \"continue!\" as command."
        ("buster" . "guile-2.2")
        ("stretch" . "guile-2.0")))))
 
-(define os-mirror-type
+(define distro-mirror-type
   '(("debian" . "apt")))
 
 (define mirror-specs
   '(("apt" .
-     (("os" . "debian")
+     (("distro" . "debian")
       ("release" . "bullseye")
       ("memory" . "1024")
       ("username" . "user")
@@ -420,9 +420,9 @@ To exit the interactive mode enter \"continue!\" as command."
         (else #f))))
    spec))
 
-(define* (resolve-iso-path data-path iso-specs os release)
+(define* (resolve-iso-path data-path iso-specs distro release)
   (let* ((iso-dir (utils:path data-path "isos"))
-         (spec (utils:assoc-get iso-specs os release))
+         (spec (utils:assoc-get iso-specs distro release))
          (iso-path (find-iso-path #f iso-dir spec)))
     (if iso-path iso-path (find-iso-path #t iso-dir spec))))
 
@@ -444,11 +444,11 @@ To exit the interactive mode enter \"continue!\" as command."
           (utils:path
            data-path "mirrors"
            (assoc-ref
-            os-mirror-type
-            (utils:assoc-get spec "guest" "os"))))
-         (os (utils:assoc-get spec "guest" "os"))
+            distro-mirror-type
+            (utils:assoc-get spec "guest" "distro"))))
+         (distro (utils:assoc-get spec "guest" "distro"))
          (release (utils:assoc-get spec "guest" "release"))
-         (cdrom-path (resolve-iso-path data-path iso-specs os release))
+         (cdrom-path (resolve-iso-path data-path iso-specs distro release))
          (test-path (utils:path run-path name))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
@@ -551,7 +551,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
              ((matcher "step13")
               (format expect-port "apt install -y ~A"
                (utils:assoc-get guest-guile-package
-                (utils:assoc-get spec "guest" "os")
+                (utils:assoc-get spec "guest" "distro")
                 (utils:assoc-get spec "guest" "release")))
               (newline expect-port)))
             (expect
@@ -665,7 +665,7 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
 
 (define* (run-mirror-sync run-id guest-spec iso-specs sources-path temp-path data-path)
   (let* ((name "mirror-sync")
-         (os (utils:assoc-get guest-spec "os"))
+         (distro (utils:assoc-get guest-spec "distro"))
          (release (utils:assoc-get guest-spec "release"))
          (memory (utils:assoc-get guest-spec "memory"))
          (run-path (utils:path temp-path run-id))
@@ -673,8 +673,8 @@ Either run with networking enabled, or synchronise apt-mirror first!"))
           (utils:path
            data-path "mirrors"
            (assoc-ref
-            os-mirror-type os)))
-         (cdrom-path (resolve-iso-path data-path iso-specs os release))
+            distro-mirror-type distro)))
+         (cdrom-path (resolve-iso-path data-path iso-specs distro release))
          (test-path (utils:path run-path name))
          (logs-path (utils:path test-path "logs"))
          (log-port (open-log-port logs-path "output.log"))
