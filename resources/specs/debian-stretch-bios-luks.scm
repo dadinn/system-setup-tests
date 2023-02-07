@@ -1,5 +1,5 @@
 (("guest"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("username" . "user")
   ("password" . "live")
@@ -13,13 +13,13 @@
   ("swapsize" . "100M")
   ("passphrase" . "password"))
  ("install"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("hostname" . "besenczy")
   ("sudouser" . "testuser")
   ("password" . "password")))
 ("guest"
- ("os" . "debian")
+ ("distro" . "debian")
  ("release" . "stretch")
  ("username" . "user")
  ("password" . "live")
@@ -33,7 +33,7 @@
  ("swapsize" . "100M")
  ("passphrase" . "password01"))
 ("install"
- ("os" . "debian")
+ ("distro" . "debian")
  ("release" . "stretch")
  ("hostname" . "besenczy")
  ("sudouser" . "testuser")

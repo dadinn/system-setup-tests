@@ -1,5 +1,5 @@
 (("guest"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("username" . "user")
   ("password" . "live")
@@ -19,7 +19,7 @@
   ("zpool" . "storage")
   ("swapsize" . "100M"))
  ("install"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("hostname" . "testing")
   ("sudouser" . "testuser")
