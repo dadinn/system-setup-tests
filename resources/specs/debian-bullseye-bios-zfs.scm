@@ -1,5 +1,5 @@
 (("guest"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "bullseye")
   ("username" . "user")
   ("password" . "live")
@@ -20,7 +20,7 @@
   ("swapsize" . "100M")
   ("passphrase" . "password01"))
  ("install"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "bullseye")
   ("hostname" . "besenczy")
   ("sudouser" . "testuser")

@@ -1,5 +1,5 @@
 (("guest"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("username" . "user")
   ("password" . "live")
@@ -23,7 +23,7 @@
   ;; though ZFS v0.6.5 does not support native encryption
   ("passphrase" . "password01"))
  ("install"
-  ("os" . "debian")
+  ("distro" . "debian")
   ("release" . "stretch")
   ("hostname" . "besenczy")
   ("sudouser" . "testuser")
