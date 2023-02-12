@@ -199,6 +199,7 @@ To exit the interactive mode enter \"continue!\" as command."
             (if (null? args) default-pattern (car args))
             (if (null? args) '() (cdr args))))
           (pattern-length (string-length pattern))
+          (rx (make-regexp pattern))
           (log-file (utils:path log-path (string-append id ".log")))
           (log-port (open-output-file log-file)))
      (format log-port "EXPECTING: ~A\nMATCHING AGAINST:\n" pattern)
@@ -209,7 +210,7 @@ To exit the interactive mode enter \"continue!\" as command."
            (when (< 0 (string-length s))
              (display (string-ref s (- (string-length s) 1)) log-port))
            (cond
-            ((regex:string-match pattern content)
+            ((regexp-exec rx s)
              (newline log-port)
              (display "MATCHED!!!" log-port)
              (close log-port)
