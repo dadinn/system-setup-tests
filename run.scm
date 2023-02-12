@@ -198,7 +198,6 @@ To exit the interactive mode enter \"continue!\" as command."
            (apply format #f
             (if (null? args) default-pattern (car args))
             (if (null? args) '() (cdr args))))
-          (pattern-length (string-length pattern))
           (rx (make-regexp pattern))
           (log-file (utils:path log-path (string-append id ".log")))
           (log-port (open-output-file log-file)))
@@ -206,9 +205,10 @@ To exit the interactive mode enter \"continue!\" as command."
      (lambda (s eof?)
        (cond
         ((not eof?)
-         (let ((content (substring s (max 0 (- (string-length s) pattern-length 1)))))
-           (when (< 0 (string-length s))
-             (display (string-ref s (- (string-length s) 1)) log-port))
+         (let* ((content-length (string-length s))
+                (current-char (string-ref s (- content-length 1))))
+           (when (< 0 content-length)
+             (display current-char log-port))
            (cond
             ((regexp-exec rx s)
              (newline log-port)
