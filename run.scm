@@ -20,49 +20,14 @@ exec guile -e main -s "$0" "$@"
  ((ice-9 exceptions))
  ((ice-9 expect)
   #:select
-  ((expect . expect-old)
+  (expect
    expect-strings expect-regexec
    expect-strings-compile-flags
    expect-timeout expect-timeout-proc
    expect-select expect-eof-proc)))
 
-(define-macro (expect . clauses)
-  (let ((binding (gensym "matcher"))
-        (matcher (caar clauses))
-        (body (cdar clauses)))
-    `(let ((,binding ,matcher))
-       (expect-old ,(cons binding body)))))
-
 (define-macro (comment . args)
   `(if #f #f))
-
-(define-macro (interact port)
-  "Scheme procedure: interact PORT
-
-Gives interactive control to the user by reading lines of commands and forwarding them
-to the VM process. The serial output of the VM process are then printed to the current
-standard output. PORT argument has to be an input-output pipe to communicate with the
-current process.
-
-To exit the interactive mode enter \"continue!\" as command."
-  `(let ((interaction
-          (call-with-new-thread
-           (lambda ()
-             (let loop ((line (readline)))
-               (cond
-                ((equal? line "continue!")
-                 (newline ,port))
-                (else
-                 (display line ,port)
-                 (newline ,port)
-                 (loop (readline)))))))))
-     (let loop ()
-       (expect-old
-        ((const #t)
-         (cond
-          ((thread-exited? interaction)
-           (format #t "\nCONTINUING...\n"))
-          (else (loop))))))))
 
 (define-syntax prompt
   (lambda (stx)
@@ -238,12 +203,13 @@ To exit the interactive mode enter \"continue!\" as command."
           (rx (make-regexp pattern))
           (log-file (utils:path log-path (string-append id ".log")))
           (log-port (open-output-file log-file)))
-     (format log-port "EXPECTING: ~A\nMATCHING AGAINST:\n" pattern)
+     (format #t "EXPECTING: ~A\nMATCHING AGAINST:\n" pattern)
      (lambda (s eof?)
        (cond
         ((not eof?)
          (let* ((content-length (string-length s))
                 (current-char (string-ref s (- content-length 1))))
+           (format #t "READ: ~c\n" current-char)
            (when (< 0 content-length)
              (display current-char log-port))
            (cond
